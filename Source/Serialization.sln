@@ -1,0 +1,26 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# RemObjects Fire
+Project("{656346D9-4656-40DA-A068-22D5425D4639}") = "Serialization", "Serialization.elements", "{C0FA7D07-304E-4005-9745-C9263230B2AD}"
+EndProject
+Project("{656346D9-4656-40DA-A068-22D5425D4639}") = "TestApp", "..\TestApp\TestApp.elements", "{7C4C2E79-BC56-44CE-835B-95820AE69B4A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|AnyCPU = Debug|AnyCPU
+		Release|AnyCPU = Release|AnyCPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C0FA7D07-304E-4005-9745-C9263230B2AD}.Debug|AnyCPU.ActiveCfg = Debug|AnyCPU
+		{C0FA7D07-304E-4005-9745-C9263230B2AD}.Debug|AnyCPU.Build.0 = Debug|AnyCPU
+		{C0FA7D07-304E-4005-9745-C9263230B2AD}.Release|AnyCPU.ActiveCfg = Release|AnyCPU
+		{C0FA7D07-304E-4005-9745-C9263230B2AD}.Release|AnyCPU.Build.0 = Release|AnyCPU
+		{7C4C2E79-BC56-44CE-835B-95820AE69B4A}.Debug|AnyCPU.ActiveCfg = Debug|AnyCPU
+		{7C4C2E79-BC56-44CE-835B-95820AE69B4A}.Debug|AnyCPU.Build.0 = Debug|AnyCPU
+		{7C4C2E79-BC56-44CE-835B-95820AE69B4A}.Release|AnyCPU.ActiveCfg = Release|AnyCPU
+		{7C4C2E79-BC56-44CE-835B-95820AE69B4A}.Release|AnyCPU.Build.0 = Release|AnyCPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

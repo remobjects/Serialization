@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <ProductVersion>3.5</ProductVersion>
+    <RootNamespace>RemObjects.Elements.Serialization</RootNamespace>
+    <ProjectGuid>{C0FA7D07-304E-4005-9745-C9263230B2AD}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <TargetFramework>.NETStandard2.0</TargetFramework>
+    <Mode>Echoes</Mode>
+    <DefaultUses>RemObjects.Elements.RTL;RemObjects.Elements.RTL.Reflection</DefaultUses>
+    <BinaryName>RemObjects.Elements.Serialization</BinaryName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <Optimize>False</Optimize>
+    <OutputPath>.\Bin\Debug</OutputPath>
+    <ConditionalDefines>DEBUG;TRACE;</ConditionalDefines>
+    <GeneratePDB>True</GeneratePDB>
+    <GenerateMDB>True</GenerateMDB>
+    <EnableAsserts>True</EnableAsserts>
+    <CpuType>anycpu</CpuType>
+    <EnableUnmanagedDebugging>False</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <OutputPath>.\Bin\Release</OutputPath>
+    <CpuType>anycpu</CpuType>
+    <EnableUnmanagedDebugging>False</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Echoes">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Elements">
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Coder.pas" />
+    <Compile Include="Properties\AssemblyInfo.pas" />
+    <Compile Include="Aspect.pas" />
+    <Compile Include="JsonCoder.pas" />
+    <Compile Include="XmlCoder.pas" />
+    <Compile Include="Coder.Encode.pas" />
+    <Compile Include="Coder.Decode.pas" />
+    <Compile Include="JsonCoder.Encode.pas" />
+    <Compile Include="XmlCoder.Encode.pas" />
+    <Compile Include="Attributes.pas" />
+    <Compile Include="XmlCoder.Decode.pas" />
+    <Compile Include="JsonCoder.Decode.pas" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Elements\RemObjects.Elements.targets" />
+</Project>
