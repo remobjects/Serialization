@@ -36,8 +36,8 @@ type
   //
 
   CoderType = public enum ( Undefined = -1, Null = 0, Boolean = 1, String = 2, Int = 3, UInt = 4, Date = 5, Object = 6, IEnumerable = 7);
-  Int8 = public SByte;
-  UInt8 = public Byte;
+  RemObjects.Elements.System.Int8 = public SByte;
+  RemObjects.Elements.System.UInt8 = public Byte;
 
   CoderException = public class(Exception)
   end;

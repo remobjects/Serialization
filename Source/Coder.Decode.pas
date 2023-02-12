@@ -10,13 +10,12 @@ type
       result.Decode(self);
     end;
 
-
     method DecodeObject(aName: String; aType: &Type): IDecodable;
     begin
       if DecodeObjectStart(aName) then begin
         var lTypeName := DecodeObjectType(aName);
         if assigned(lTypeName) then
-          aType := &Type.AllTypes.FirstOrDefault(t -> t.Name = aName);
+          aType := FindType(lTypeName);
         if not assigned(aType) then
           raise new CoderException($"Unknown type '{lTypeName}'.");
 
@@ -108,6 +107,21 @@ type
     method DecodeObjectType(aName: String): String; virtual; empty;
     method DecodeObjectStart(aName: String): Boolean; abstract;
     method DecodeObjectEnd(aName: String); abstract;
+
+  private
+
+    method FindType(aName: String): &Type;
+    begin
+      if not assigned(fTypesCache) then
+        fTypesCache := &Type.AllTypes;
+      result := fTypesCache.FirstOrDefault(t -> t.FullName = aName);
+      if not assigned(result) then begin
+        fTypesCache := &Type.AllTypes; // load again, maye we have new types now
+        result := fTypesCache.FirstOrDefault(t -> t.FullName = aName);
+      end;
+    end;
+
+    var fTypesCache: ImmutableList<&Type>;
 
   end;
 

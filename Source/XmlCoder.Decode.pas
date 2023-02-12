@@ -11,10 +11,8 @@ type
 
     method DecodeObjectType(aName: String): String;  override;
     begin
-      Log($"Current {Current}");
       result := Current.Elements.First.LocalName;
       Hierarchy.Push(Current.Elements.First);
-      Log($"type: {result}");
     end;
 
     method DecodeObjectStart(aName: String): Boolean; override;

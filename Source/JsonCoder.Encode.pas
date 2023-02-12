@@ -45,7 +45,7 @@ type
         var lObject := new JsonObject;
         Current[aName] := lObject;
         Hierarchy.Push(lObject);
-        Current["__Ytpe"] := typeOf(lObject).ToString;
+        Current["__Type"] := typeOf(aValue).ToString;
       end;
     end;
 

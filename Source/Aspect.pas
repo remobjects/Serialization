@@ -131,18 +131,48 @@ type
       PropertiesLoop:
       for each p in GetCodableProperties do begin
 
-        var lDecoderFunction := case p.Type.Fullname of
-          "String",
+        var lDecoderFunction: String;
+        case p.Type.Fullname of
           "System.String",
-          "RemObjects.Elements.RTL.String": "String";
+          "RemObjects.Elements.RTL.String": lDecoderFunction := "String";
+
+          "System.Guid",
+          "RemObjects.Elements.RTL.Guid": lDecoderFunction := "Guid";
 
           "System.DateTime",
-          "RemObjects.Elements.RTL.DateTime": "DateTime";
+          "RemObjects.Elements.RTL.DateTime": lDecoderFunction := "DateTime";
 
-          "RemObjects.Elements.System.Integer": "Int32";
-          else "Object"
-          //else raise new Exception($"Type '{p.Type.Fullname}' is not decodable");
+          "RemObjects.Elements.System.SByte",
+          "RemObjects.Elements.System.Int8": lDecoderFunction := "Int8";
+
+          "RemObjects.Elements.System.Int16": lDecoderFunction := "Int16";
+
+          "RemObjects.Elements.System.Int32",
+          "RemObjects.Elements.System.Integer": lDecoderFunction := "Int32";
+          "RemObjects.Elements.System.IntPtr",
+          "RemObjects.Elements.System.Int64": lDecoderFunction := "Int64";
+
+          "RemObjects.Elements.System.Byte",
+          "RemObjects.Elements.System.UInt8": lDecoderFunction := "UInt8";
+          "RemObjects.Elements.System.UInt16": lDecoderFunction := "UInt16";
+          "RemObjects.Elements.System.UInt32": lDecoderFunction := "UInt32";
+          "RemObjects.Elements.System.UIntPtr",
+          "RemObjects.Elements.System.UInt64": lDecoderFunction := "UInt64";
+
+          "RemObjects.Elements.System.Single": lDecoderFunction := "Single";
+          "RemObjects.Elements.System.Double": lDecoderFunction := "Double";
+          "RemObjects.Elements.System.Boolean": lDecoderFunction := "Boolean";
+
+          else begin
+              //if /*IsDecodable(p.Type)*/ p.Type.IsReferenceType then
+                lDecoderFunction := "Object";
+            end;
         end;
+
+        Log($"lDecoderFunction {p.Name}: {p.Type.Fullname} ({p.Type.IsReferenceType} {p.Type.IsValueType}) -> {lDecoderFunction}");
+
+        if not assigned(lDecoderFunction) then
+          raise new Exception($"Type '{p.Type.Fullname}' is not decodable");
 
 
         var lParameterName: String;
@@ -199,7 +229,26 @@ type
       fType.AddInterface(fServices.GetType(aName));
     end;
 
+    method TypeImplementsInterface(aType: IType; aName: String): Boolean;
+    begin
+      for i := 0 to aType.InterfaceCount-1 do
+        if fType.GetInterface(i).Name = aName then
+          exit true;
+    end;
 
+    method TypeHasAttribute(aType: IType; aName: String): Boolean;
+    begin
+      //for i := 0 to aType.InterfaceCount-1 do
+        //if fType.GetInterface(i).Name = aName then
+          //exit true;
+    end;
+
+    method IsDecodable(aType: IType): Boolean;
+    begin
+      result := TypeImplementsInterface(aType, "RemObjects.Elements.Serialization.IDecodable") or
+                TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Decodable");
+
+    end;
   end;
 
 end.
