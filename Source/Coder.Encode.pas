@@ -30,10 +30,12 @@ type
           Int16: EncodeInt16(aName, aObject as Int16);
           Int32: EncodeInt32(aName, aObject as Int32);
           Int64: EncodeInt64(aName, aObject as Int64);
+          IntPtr: EncodeInt64(aName, aObject as IntPtr as Int64);
           UInt8: EncodeUInt8(aName, aObject as UInt8);
           UInt16: EncodeUInt16(aName, aObject as UInt16);
           UInt32: EncodeUInt32(aName, aObject as UInt32);
           UInt64: EncodeUInt64(aName, aObject as UInt64);
+          UIntPtr: EncodeUInt64(aName, aObject as UIntPtr as UInt64);
           Boolean: EncodeBoolean(aName, aObject as Boolean);
           Single: EncodeSingle(aName, aObject as Single);
           Double: EncodeDouble(aName, aObject as Double);

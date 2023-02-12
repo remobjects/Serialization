@@ -60,6 +60,8 @@ type
     property c2: UInt32;
     property d1: Int64;
     property d2: UInt64;
+    property e1: IntPtr;
+    property e2: UIntPtr;
 
     property e: Single;
     property f: Double;

@@ -131,49 +131,50 @@ type
       PropertiesLoop:
       for each p in GetCodableProperties do begin
 
+        var lType := p.Type;
+        while lType is ILinkType do
+          lType := (lType as ILinkType).SubType;
+        while lType is IRemappedType do
+          lType := (lType as IRemappedType).RealType;
+        while lType is ILinkType do
+          lType := (lType as ILinkType).SubType;
+
+        Log($"p.Type {p.Type.Fullname}, {lType.Fullname}");
+
         var lDecoderFunction: String;
-        case p.Type.Fullname of
-          "System.String",
-          "RemObjects.Elements.RTL.String": lDecoderFunction := "String";
+        case lType.Fullname of
+          "System.String": lDecoderFunction := "String";
 
-          "System.Guid",
-          "RemObjects.Elements.RTL.Guid": lDecoderFunction := "Guid";
+          "RemObjects.Elements.RTL.Guid",
+          "System.Guid": lDecoderFunction := "Guid";
 
-          "System.DateTime",
-          "RemObjects.Elements.RTL.DateTime": lDecoderFunction := "DateTime";
+          "RemObjects.Elements.RTL.DateTime",
+          "System.DateTime": lDecoderFunction := "DateTime";
 
-          "RemObjects.Elements.System.SByte",
-          "RemObjects.Elements.System.Int8": lDecoderFunction := "Int8";
+          "System.Byte": lDecoderFunction := "UInt8";
+          "System.SByte": lDecoderFunction := "Int8";
+          "System.Int16": lDecoderFunction := "Int16";
+          "System.Int32": lDecoderFunction := "Int32";
+          "System.Int64", "System.IntPtr": lDecoderFunction := "Int64";
+          "System.UInt16": lDecoderFunction := "UInt16";
+          "System.UInt32": lDecoderFunction := "UInt32";
+          "System.UInt64", "System.UIntPtr": lDecoderFunction := "UInt64";
 
-          "RemObjects.Elements.System.Int16": lDecoderFunction := "Int16";
-
-          "RemObjects.Elements.System.Int32",
-          "RemObjects.Elements.System.Integer": lDecoderFunction := "Int32";
-          "RemObjects.Elements.System.IntPtr",
-          "RemObjects.Elements.System.Int64": lDecoderFunction := "Int64";
-
-          "RemObjects.Elements.System.Byte",
-          "RemObjects.Elements.System.UInt8": lDecoderFunction := "UInt8";
-          "RemObjects.Elements.System.UInt16": lDecoderFunction := "UInt16";
-          "RemObjects.Elements.System.UInt32": lDecoderFunction := "UInt32";
-          "RemObjects.Elements.System.UIntPtr",
-          "RemObjects.Elements.System.UInt64": lDecoderFunction := "UInt64";
-
-          "RemObjects.Elements.System.Single": lDecoderFunction := "Single";
-          "RemObjects.Elements.System.Double": lDecoderFunction := "Double";
-          "RemObjects.Elements.System.Boolean": lDecoderFunction := "Boolean";
+          "System.Single": lDecoderFunction := "Single";
+          "System.Double": lDecoderFunction := "Double";
+          "System.Boolean": lDecoderFunction := "Boolean";
 
           else begin
-              //if /*IsDecodable(p.Type)*/ p.Type.IsReferenceType then
+              //if /*IsDecodable(lType)*/ lType.IsReferenceType then
                 lDecoderFunction := "Object";
+                Log($"Decode: treating '{lType.Fullname}' as object");
             end;
         end;
 
-        Log($"lDecoderFunction {p.Name}: {p.Type.Fullname} ({p.Type.IsReferenceType} {p.Type.IsValueType}) -> {lDecoderFunction}");
+        //Log($"lDecoderFunction {p.Name}: {lType.Fullname} ({lType.IsReferenceType} {lType.IsValueType}) -> {lDecoderFunction}");
 
         if not assigned(lDecoderFunction) then
-          raise new Exception($"Type '{p.Type.Fullname}' is not decodable");
-
+          fServices.EmitError($"Type '{lType.Fullname}' is not decodable");
 
         var lParameterName: String;
 
