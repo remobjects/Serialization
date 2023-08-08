@@ -1,7 +1,7 @@
 ﻿namespace RemObjects.Elements.Serialization;
 
 type
-  JsonCoder = public partial class(GenericCoder<JsonObject>)
+  JsonCoder = public partial class(GenericCoder<JsonNode>)
   public
 
     constructor;

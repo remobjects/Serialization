@@ -46,8 +46,11 @@ type
               (aObject as IEncodable).Encode(self);
               EncodeObjectEnd(aName, aObject as IEncodable);
             end
+            //else if typeOf(aObject).FullName.StartsWith("System.Collections.Generic.List`1[") then begin
+
+            //end
             else begin
-              raise new CodingExeption($"Type '{typeOf(aObject)}' is not encodable.");
+              raise new CodingExeption($"Type '{typeOf(aObject)}' for field or property '{aName}' is not encodable.");
             end;
           end;
         end;
