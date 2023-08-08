@@ -70,6 +70,16 @@ type
 
       var lBody := new BeginStatement;
 
+      if IsEncodable(fType.ParentType) then begin
+        //writeLn($"ParentType {fType.ParentType.Fullname} of {fType.Fullname} is encodable");
+        var lInheritedCall := new ProcValue(new SelfValue, "Encode", new IdentifierValue("aCoder"), &Inherited := true);
+        lBody.Add(new StandaloneStatement(lInheritedCall));
+        lEncode.Virtual := VirtualMode.Override;
+      end
+      else begin
+        lEncode.Virtual := VirtualMode.Virtual;
+      end;
+
       //var lCoder := fServices.GetType("RemObjects.Elements.Serialization.Coder");
       //var lCoderEncode := lCoder.GetMethod("Encode", ["System.String", "System.Object"], [ParameterModifier.In, ParameterModifier.In]);
 
@@ -77,11 +87,13 @@ type
       for each p in GetCodableProperties do begin
 
         var lValue: Value;
+        var lPosition: IPosition := nil;
 
         for i := 0 to p.AttributeCount-1 do begin
           var a := p.GetAttribute(i);
           case a.Type.Fullname of
             "RemObjects.Elements.Serialization.EncodeMember": begin
+                lPosition := a;
                 var lName := a.GetParameter(0);
                 writeLn($"lName.ToString {lName.ToString}");
                 //lValue := new IfStatement()
@@ -106,7 +118,10 @@ type
 
         if not assigned(lValue) then
           lValue := new ProcValue(new ParamValue(0), "EncodeField", nil, false, [p.Name, new IdentifierValue(p.Name)]);
-        lBody.Add(new StandaloneStatement(lValue));
+        var lStatement := new StandaloneStatement(lValue);
+        if assigned(lPosition) then
+          lStatement.Position := lPosition;
+        lBody.Add(lStatement);
       end;
       lEncode.ReplaceMethodBody(lBody);
 
@@ -125,11 +140,24 @@ type
 
       var lBody := new BeginStatement;
 
+      if IsDecodable(fType.ParentType) then begin
+        //writeLn($"ParentType {fType.ParentType.Fullname} of {fType.Fullname} is decodable");
+        var lInheritedCall := new ProcValue(new SelfValue, "Decode", new IdentifierValue("aCoder"), &Inherited := true);
+        lBody.Add(new StandaloneStatement(lInheritedCall));
+        lDecode.Virtual := VirtualMode.Override;
+      end
+      else begin
+        lDecode.Virtual := VirtualMode.Virtual;
+      end;
+
       //var lCoder := fServices.GetType("RemObjects.Elements.Serialization.Coder");
       //var lCoderEncode := lCoder.GetMethod("Encode", ["System.String", "System.Object"], [ParameterModifier.In, ParameterModifier.In]);
 
       PropertiesLoop:
       for each p in GetCodableProperties do begin
+
+        if p.ReadOnly then
+          continue;
 
         var lType := p.Type;
         while lType is ILinkType do
@@ -139,9 +167,10 @@ type
         while lType is ILinkType do
           lType := (lType as ILinkType).SubType;
 
-        Log($"p.Type {p.Type.Fullname}, {lType.Fullname}");
+        //Log($"p.Type {p.Type.Fullname}, {lType.Fullname}");
 
         var lDecoderFunction: String;
+        var lDecoderType: IType;
         case lType.Fullname of
           "System.String": lDecoderFunction := "String";
 
@@ -165,16 +194,26 @@ type
           "System.Boolean": lDecoderFunction := "Boolean";
 
           else begin
-              //if /*IsDecodable(lType)*/ lType.IsReferenceType then
-                lDecoderFunction := "Object";
-                Log($"Decode: treating '{lType.Fullname}' as object");
+            if IsDecodable(lType) then begin
+              lDecoderFunction := "Object";
+              lDecoderType := lType;
+              //Log($"Decode: treating '{lType.Fullname}' as decodale object");
+            end
+            else if lType.IsReferenceType then begin
+              //Log($"Decode: treating '{lType.Fullname}' as object, but its not decodable");
+            end
+            else begin
+              //Log($"Decode: treating '{lType.Fullname}' is not an object and not decodable");
             end;
+          end;
         end;
 
         //Log($"lDecoderFunction {p.Name}: {lType.Fullname} ({lType.IsReferenceType} {lType.IsValueType}) -> {lDecoderFunction}");
 
-        if not assigned(lDecoderFunction) then
-          fServices.EmitError($"Type '{lType.Fullname}' is not decodable");
+        if not assigned(lDecoderFunction) then begin
+          fServices.EmitWarning(p, $"Type '{lType.Fullname}' for property '{p.Name}' is not decodable");
+          continue;
+        end;
 
         var lParameterName: String;
 
@@ -196,9 +235,9 @@ type
           end;
         end;
 
-        var lValue := if lDecoderFunction = "Object" then
+        var lValue := if lDecoderFunction = "Object"/*) and assigned(lDecoderType)*/ then
           new BinaryValue(new ProcValue(new ParamValue(0), "Decode"+lDecoderFunction, nil, false, [coalesce(lParameterName, p.Name),
-                                                                                                   /*new TypeOfValue(p.Type)*/new NilValue]),
+                                                                                                   new TypeOfValue(lDecoderType)]),
                           new TypeValue(p.Type),
                           BinaryOperator.As)
         else
@@ -232,22 +271,33 @@ type
 
     method TypeImplementsInterface(aType: IType; aName: String): Boolean;
     begin
-      for i := 0 to aType.InterfaceCount-1 do
-        if fType.GetInterface(i).Name = aName then
+      for i := 0 to aType.InterfaceCount-1 do begin
+        if aType.GetInterface(i).Name = aName then
           exit true;
+      end;
     end;
 
     method TypeHasAttribute(aType: IType; aName: String): Boolean;
     begin
-      //for i := 0 to aType.InterfaceCount-1 do
-        //if fType.GetInterface(i).Name = aName then
-          //exit true;
+      if aType is var lAttributesProvider: IAttributesProvider then
+        for i := 0 to lAttributesProvider.AttributeCount-1 do
+          if lAttributesProvider.GetAttribute(i).Type.Fullname = aName then
+            exit true;
     end;
 
     method IsDecodable(aType: IType): Boolean;
     begin
       result := TypeImplementsInterface(aType, "RemObjects.Elements.Serialization.IDecodable") or
-                TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Decodable");
+                TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Decodable") or
+                TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Codable");
+
+    end;
+
+    method IsEncodable(aType: IType): Boolean;
+    begin
+      result := TypeImplementsInterface(aType, "RemObjects.Elements.Serialization.IEncodable") or
+                TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Encodable") or
+                TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Codable");
 
     end;
   end;
