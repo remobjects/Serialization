@@ -29,12 +29,16 @@ type
       result := Current[aName]:BooleanValue
     end;
 
+    method DecodeObjectType(aName: String): String; override;
+    begin
+      result := Current["__Type"]:StringValue;
+    end;
+
     method DecodeObjectStart(aName: String): Boolean; override;
     begin
       if Current[aName] is JsonObject then
         Hierarchy.Push(Current[aName] as JsonObject);
-      var lType := Current["__Type"];
-      //result := RemObjects.Elements.RTL.Reflection.&Type.AllTypes.
+      result := true;
     end;
 
     method DecodeObjectEnd(aName: String); override;

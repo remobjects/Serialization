@@ -10,14 +10,28 @@ type
       result.Decode(self);
     end;
 
+    method Decode<T>: T; where T has constructor, T is IDecodable;
+    begin
+      result := new T;
+      result.Decode(self);
+    end;
+
     method DecodeObject(aName: String; aType: &Type): IDecodable;
     begin
       if DecodeObjectStart(aName) then begin
         var lTypeName := DecodeObjectType(aName);
-        if assigned(lTypeName) then
-          aType := FindType(lTypeName);
+
+        if assigned(lTypeName) then begin
+          var aConcreteType := FindType(lTypeName);
+          if not assigned(aConcreteType) then
+            raise new CoderException($"Unknown type '{lTypeName}'.");
+          if assigned(aType) and (aConcreteType ≠ aType) and not aConcreteType.IsSubclassOf(aType) then
+            raise new CoderException($"Concrete type '{aConcreteType.Name}' does not descend from {aType.Name}.");
+          aType := aConcreteType;
+        end;
+
         if not assigned(aType) then
-          raise new CoderException($"Unknown type '{lTypeName}'.");
+          raise new CoderException($"Unknown type.");
 
         result := aType.Instantiate() as IDecodable;
         result.Decode(self);

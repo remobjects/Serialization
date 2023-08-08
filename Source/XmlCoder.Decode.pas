@@ -9,7 +9,7 @@ type
       result := Current.FirstElementWithName(aName):Value;
     end;
 
-    method DecodeObjectType(aName: String): String;  override;
+    method DecodeObjectType(aName: String): String; override;
     begin
       result := Current.Elements.First.LocalName;
       Hierarchy.Push(Current.Elements.First);
