@@ -14,7 +14,8 @@ type
 
         var f := new Foo(Name := "test",
                          Age := 25,
-                         DateOfBirth := DateTime.UtcNow.AddDays(30),
+                         //DateOfBirth := DateTime.UtcNow.AddDays(30),
+                         //DateOfBirth2 := DateTime.UtcNow.AddDays(30),
                          Sub := new Bar2(Street := "Happy", Number := 5, ID := Guid.NewGuid, Isbar2 := true),
                          Arr := ["Hello", "World"],
                          Arr2 := [1,2],
@@ -66,6 +67,10 @@ type
     //[EncodeMember("Max")]
     property Age: Integer;
     property DateOfBirth: DateTime;
+    property DateOfBirth2: PlatformDateTime;
+
+    property g: Guid;
+    property g2: PlatformGuid;
 
     property id: String;
     property fooBar: String;

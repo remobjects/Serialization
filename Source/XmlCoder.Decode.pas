@@ -9,7 +9,7 @@ type
       if assigned(aName) then
         result := Current.FirstElementWithName(aName):Value
       else
-        result := Current:Value
+        result := Current:Value;
     end;
 
     method DecodeObjectType(aName: String): String; override;
