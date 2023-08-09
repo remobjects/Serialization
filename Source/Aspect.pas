@@ -247,7 +247,6 @@ type
                                         BinaryOperator.As)
             end;
           "Array", "List": begin
-              Log($"""Decode""+lDecoderFunction {"Decode"+lDecoderFunction}");
               lValue := new BinaryValue(new ProcValue(new ParamValue(0), "Decode"+lDecoderFunction, [lDecoderType], [lParameterName/*, new TypeOfValue(lDecoderType)*/]),
                                         new TypeValue(p.Type),
                                         BinaryOperator.As)
@@ -297,10 +296,12 @@ type
         "System.SByte": lCoderFunction := "Int8";
         "System.Int16": lCoderFunction := "Int16";
         "System.Int32": lCoderFunction := "Int32";
-        "System.Int64", "System.IntPtr": lCoderFunction := "Int64";
+        "System.Int64": lCoderFunction := "Int64";
+        "System.IntPtr": lCoderFunction := "IntPtr";
         "System.UInt16": lCoderFunction := "UInt16";
         "System.UInt32": lCoderFunction := "UInt32";
-        "System.UInt64", "System.UIntPtr": lCoderFunction := "UInt64";
+        "System.UInt64": lCoderFunction := "UInt64";
+        "System.UIntPtr": lCoderFunction := "UIntPtr";
 
         "System.Single": lCoderFunction := "Single";
         "System.Double": lCoderFunction := "Double";
@@ -314,13 +315,20 @@ type
           else if aType is var lArrayType: IArrayType then begin
             lCoderFunction := "Array";
             lCoderType := FlattenType(lArrayType.SubType);
-            writeLn($"lCoderType {lCoderType}");
-            //writeLn($"lCoderType {lCoderType.Fullname}");
-            //if lCoderType is then
+          end
+          else if aType is var lGeneric: IGenericInstantiationType then begin
+            var lType := FlattenType(lGeneric.GenericType);
+            if (lType.Name = "Nullable`1") and (lGeneric.ParameterCount = 1) then begin
+              var lNestedType := lGeneric.GetParameter(0);
+              var lNestedCoderFunction := GetCoderFunctionName(lNestedType);
+              Log($"lNestedCoderFunction '{lNestedCoderFunction}'");
+              if assigned(lNestedCoderFunction) then
+                lCoderFunction := /*"Nullable"+*/lNestedCoderFunction[0];
+            end;
+
           end
           else begin
-            //Log($"lType {lType}");
-            //Log($"lType.Fullname {lType.Fullname}");
+            Log($"Unsupported type {aType} {aType.Fullname}");
           end;
         end;
       end;

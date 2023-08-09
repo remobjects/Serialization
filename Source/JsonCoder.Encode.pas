@@ -12,27 +12,55 @@ type
         EncodeNil(aName);
     end;
 
-    method EncodeInt64(aName: String; aValue: Int64); override;
+    method EncodeIntPtr(aName: String; aValue: nullable IntPtr); override;
     begin
-      DoEncodeValue(aName, aValue as JsonIntegerValue);
+      if assigned(aValue) then
+        DoEncodeValue(aName, aValue as JsonIntegerValue)
+      else if ShouldEncodeNil then
+        EncodeNil(aName);
     end;
 
-    method EncodeUInt64(aName: String; aValue: UInt64); override;
+    method EncodeUIntPtr(aName: String; aValue: nullable UIntPtr); override;
     begin
-      DoEncodeValue(aName, aValue as JsonIntegerValue); {$HINT Handle UInt properly}
+      if assigned(aValue) then
+        DoEncodeValue(aName, aValue as JsonIntegerValue) {$HINT Handle UInt properly}
+      else if ShouldEncodeNil then
+        EncodeNil(aName);
     end;
 
-    method EncodeDouble(aName: String; aValue: Double); override;
+    method EncodeInt64(aName: String; aValue: nullable Int64); override;
     begin
-      DoEncodeValue(aName, aValue as JsonFloatValue);
+      if assigned(aValue) then
+        DoEncodeValue(aName, aValue as JsonIntegerValue)
+      else if ShouldEncodeNil then
+        EncodeNil(aName);
     end;
 
-    method EncodeBoolean(aName: String; aValue: Boolean); override;
+    method EncodeUInt64(aName: String; aValue: nullable UInt64); override;
     begin
-      DoEncodeValue(aName, aValue as JsonBooleanValue);
+      if assigned(aValue) then
+        DoEncodeValue(aName, aValue as JsonIntegerValue) {$HINT Handle UInt properly}
+      else if ShouldEncodeNil then
+        EncodeNil(aName);
     end;
 
-    method EncodeGuid(aName: String; aValue: Guid); override;
+    method EncodeDouble(aName: String; aValue: nullable Double); override;
+    begin
+      if assigned(aValue) then
+        DoEncodeValue(aName, aValue as JsonFloatValue)
+      else if ShouldEncodeNil then
+        EncodeNil(aName);
+    end;
+
+    method EncodeBoolean(aName: String; aValue: nullable Boolean); override;
+    begin
+      if assigned(aValue) then
+        DoEncodeValue(aName, aValue as JsonBooleanValue)
+      else if ShouldEncodeNil then
+        EncodeNil(aName);
+    end;
+
+    method EncodeGuid(aName: String; aValue: nullable Guid); override;
     begin
       if assigned(aValue) then
         DoEncodeValue(aName, aValue.ToString(GuidFormat.Default).ToLowerInvariant as JsonStringValue)

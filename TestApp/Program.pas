@@ -115,6 +115,20 @@ type
     property f: Double;
     property g: Boolean;
 
+    property na1: nullable Int8;
+    property na2: nullable UInt8;
+    property nb1: nullable Int16;
+    property nb2: nullable UInt16;
+    property nc1: nullable Int32;
+    property nc2: nullable UInt32;
+    property nd1: nullable Int64;
+    property nd2: nullable UInt64;
+    property ne1: nullable IntPtr;
+    property ne2: nullable UIntPtr;
+
+    property ne: nullable Single;
+    property nf: nullable Double;
+    property ng: nullable Boolean;
     //constructor;
     //begin
       //writeLn("ctor");

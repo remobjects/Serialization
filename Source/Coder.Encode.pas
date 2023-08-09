@@ -86,67 +86,77 @@ type
     end;
 
 
-    method EncodeDateTime(aName: String; aValue: DateTime); virtual;
+    method EncodeDateTime(aName: String; aValue: nullable DateTime); virtual;
     begin
       EncodeString(aName, aValue:ToISO8601String)
     end;
 
-    method EncodeInt64(aName: String; aValue: Int64); virtual;
+    method EncodeIntPtr(aName: String; aValue: nullable IntPtr); virtual; // E26700: Passing a nil nullable IntPtr as nullable UInt64 converts to 0
     begin
-      EncodeString(aName, aValue.ToString);
+      EncodeString(aName, aValue:ToString);
     end;
 
-    method EncodeUInt64(aName: String; aValue: UInt64); virtual;
+    method EncodeUIntPtr(aName: String; aValue: nullable UIntPtr); virtual; // E26700: Passing a nil nullable IntPtr as nullable UInt64 converts to 0
     begin
-      EncodeString(aName, aValue.ToString);
+      EncodeString(aName, aValue:ToString);
     end;
 
-    method EncodeDouble(aName: String; aValue: Double); virtual;
+    method EncodeInt64(aName: String; aValue: nullable Int64); virtual;
     begin
-      EncodeString(aName, aValue.ToString); {$HINT Needs to be Invariant!}
+      EncodeString(aName, aValue:ToString);
     end;
 
-    method EncodeBoolean(aName: String; aValue: Boolean); virtual;
+    method EncodeUInt64(aName: String; aValue: nullable UInt64); virtual;
     begin
-      EncodeString(aName, if aValue then "True" else "False");
+      EncodeString(aName, aValue:ToString);
     end;
 
-    method EncodeGuid(aName: String; aValue: Guid); virtual;
+    method EncodeDouble(aName: String; aValue: nullable Double); virtual;
+    begin
+      EncodeString(aName, aValue:ToString); {$HINT Needs to be Invariant!}
+    end;
+
+    method EncodeBoolean(aName: String; aValue: nullable Boolean); virtual;
+    begin
+      EncodeString(aName, if assigned(aValue) then (if aValue then "True" else "False"));
+    end;
+
+    method EncodeGuid(aName: String; aValue: nullable Guid); virtual;
     begin
       EncodeString(aName, aValue:ToString(GuidFormat.Default));
     end;
 
-    method EncodeInt8(aName: String; aValue: Int8); virtual;
+    method EncodeInt8(aName: String; aValue: nullable Int8); virtual;
     begin
       EncodeInt64(aName, aValue);
     end;
 
-    method EncodeInt16(aName: String; aValue: Int16); virtual;
+    method EncodeInt16(aName: String; aValue: nullable Int16); virtual;
     begin
       EncodeInt64(aName, aValue);
     end;
 
-    method EncodeInt32(aName: String; aValue: Int32); virtual;
+    method EncodeInt32(aName: String; aValue: nullable Int32); virtual;
     begin
       EncodeInt64(aName, aValue);
     end;
 
-    method EncodeUInt8(aName: String; aValue: UInt8); virtual;
+    method EncodeUInt8(aName: String; aValue: nullable UInt8); virtual;
     begin
       EncodeUInt64(aName, aValue);
     end;
 
-    method EncodeUInt16(aName: String; aValue: UInt16); virtual;
+    method EncodeUInt16(aName: String; aValue: nullable UInt16); virtual;
     begin
       EncodeUInt64(aName, aValue);
     end;
 
-    method EncodeUInt32(aName: String; aValue: UInt32); virtual;
+    method EncodeUInt32(aName: String; aValue: nullable UInt32); virtual;
     begin
       EncodeUInt64(aName, aValue);
     end;
 
-    method EncodeSingle(aName: String; aValue: Single); virtual;
+    method EncodeSingle(aName: String; aValue: nullable Single); virtual;
     begin
       EncodeDouble(aName, aValue);
     end;

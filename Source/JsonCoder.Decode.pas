@@ -9,6 +9,16 @@ type
       result := DoGetValue(aName):StringValue
     end;
 
+    method DecodeIntPtr(aName: String): nullable IntPtr; override;
+    begin
+      result := DoGetValue(aName):IntegerValue
+    end;
+
+    method DecodeUIntPtr(aName: String): nullable UIntPtr; override;
+    begin
+      result := DoGetValue(aName):IntegerValue {$HINT Handle UInt properly}
+    end;
+
     method DecodeInt64(aName: String): nullable Int64; override;
     begin
       result := DoGetValue(aName):IntegerValue
