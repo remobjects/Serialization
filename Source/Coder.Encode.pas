@@ -41,17 +41,10 @@ type
           Double: EncodeDouble(aName, aObject as Double);
           Guid: EncodeGuid(aName, aObject as Guid);
           else begin
-            if aObject is IEncodable then begin
-              EncodeObjectStart(aName, aObject as IEncodable);
-              (aObject as IEncodable).Encode(self);
-              EncodeObjectEnd(aName, aObject as IEncodable);
-            end
-            //else if typeOf(aObject).FullName.StartsWith("System.Collections.Generic.List`1[") then begin
-
-            //end
-            else begin
+            if aObject is IEncodable then
+              EncodeObject(aName, aObject as IEncodable)
+            else
               raise new CodingExeption($"Type '{typeOf(aObject)}' for field or property '{aName}' is not encodable.");
-            end;
           end;
         end;
       end
@@ -61,9 +54,37 @@ type
       end;
     end;
 
-  protected
+    method EncodeObject(aName: String; aValue: IEncodable); virtual;
+    begin
+      if assigned(aValue) then begin
+        EncodeObjectStart(aName, aValue);
+        aValue.Encode(self);
+        EncodeObjectEnd(aName, aValue);
+      end
+      else if ShouldEncodeNil then begin
+        EncodeNil(aName);
+      end;
+    end;
 
-    property ShouldEncodeNil: Boolean := true; virtual;
+    method EncodeArray<T>(aName: String; aValue: array of T); virtual;
+    begin
+      if assigned(aValue) then begin
+        EncodeArrayStart(aName);
+        for each e in aValue do
+          EncodeField(nil, e);
+        EncodeArrayEnd(aName);
+      end
+      else if ShouldEncodeNil then begin
+        EncodeNil(aName);
+      end;
+    end;
+
+
+    method EncodeList<T>(aName: String; aValue: List<T>);
+    begin
+      raise new NotImplementedException("EncodeList<T>");
+    end;
+
 
     method EncodeDateTime(aName: String; aValue: DateTime); virtual;
     begin
@@ -92,7 +113,7 @@ type
 
     method EncodeGuid(aName: String; aValue: Guid); virtual;
     begin
-      EncodeString(aName, aValue.ToString(GuidFormat.Default));
+      EncodeString(aName, aValue:ToString(GuidFormat.Default));
     end;
 
     method EncodeInt8(aName: String; aValue: Int8); virtual;
@@ -130,10 +151,28 @@ type
       EncodeDouble(aName, aValue);
     end;
 
-    method EncodeString(aName: String; aValue: not nullable String); abstract;
+    method EncodeString(aName: String; aValue: nullable String); abstract;
+    method EncodeNil(aName: String); abstract;
+
+  protected
+
+    property ShouldEncodeNil: Boolean := true; virtual;
+
     method EncodeObjectStart(aName: String; aValue: IEncodable); abstract;
     method EncodeObjectEnd(aName: String; aValue: IEncodable); abstract;
-    method EncodeNil(aName: String); abstract;
+
+    method EncodeArrayStart(aName: String); abstract;
+    method EncodeArrayEnd(aName: String); abstract;
+
+    method EncodeListStart(aName: String); virtual;
+    begin
+      EncodeArrayStart(aName);
+    end;
+
+    method EncodeListEnd(aName: String); virtual;
+    begin
+      EncodeArrayEnd(aName);
+    end;
 
   end;
 

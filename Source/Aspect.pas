@@ -1,5 +1,4 @@
-﻿
-namespace RemObjects.Elements.Serialization;
+﻿namespace RemObjects.Elements.Serialization;
 
 uses
   RemObjects.Elements.Cirrus,
@@ -7,35 +6,46 @@ uses
   RemObjects.Elements.Cirrus.Statements;
 
 type
+  NamingStyle = public enum(AsIs, PascalCase, camelCase, lowercase, UPPERCASE);
+
   Codable = public class(System.Attribute, IBaseAspect, ITypeInterfaceDecorator)
   public
 
-    method HandleInterface(aServices: IServices; fType: ITypeDefinition);
+    method HandleInterface(aServices: IServices; aType: ITypeDefinition); virtual;
     begin
-      var lCodableHelpers := new CodableHelpers(aServices, fType);
+      var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
       lCodableHelpers.ImplementEncode;
       lCodableHelpers.ImplementDecode;
     end;
 
+    constructor; empty;
+
+    constructor (aNamingStyle: NamingStyle);
+    begin
+      NamingStyle := aNamingStyle;
+    end;
+
+    property NamingStyle: NamingStyle;
+
   end;
 
-  Encodable = public class(System.Attribute, IBaseAspect, ITypeInterfaceDecorator)
+  Encodable = public class(Codable)
   public
 
-    method HandleInterface(aServices: IServices; fType: ITypeDefinition);
+    method HandleInterface(aServices: IServices; aType: ITypeDefinition); override;
     begin
-      var lCodableHelpers := new CodableHelpers(aServices, fType);
+      var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
       lCodableHelpers.ImplementEncode;
     end;
 
   end;
 
-  Decodable = public class(System.Attribute, IBaseAspect, ITypeInterfaceDecorator)
+  Decodable = public class(Codable)
   public
 
-    method HandleInterface(aServices: IServices; fType: ITypeDefinition);
+    method HandleInterface(aServices: IServices; aType: ITypeDefinition); override;
     begin
-      var lCodableHelpers := new CodableHelpers(aServices, fType);
+      var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
       lCodableHelpers.ImplementDecode;
     end;
 
@@ -48,14 +58,20 @@ type
   CodableHelpers = unit class
   unit
 
-    constructor(aServices: IServices; aType: ITypeDefinition);
+    constructor(aServices: IServices; aType: ITypeDefinition; aNamingStyle: NamingStyle);
     begin
       fServices := aServices;
       fType := aType;
+      fNamingStyle := aNamingStyle;
     end;
 
     var fServices: IServices; private;
     var fType: ITypeDefinition; private;
+    var fNamingStyle: NamingStyle;
+
+    //
+    // ENCODE
+    //
 
     method ImplementEncode;
     begin
@@ -89,35 +105,64 @@ type
         var lValue: Value;
         var lPosition: IPosition := nil;
 
-        for i := 0 to p.AttributeCount-1 do begin
-          var a := p.GetAttribute(i);
-          case a.Type.Fullname of
-            "RemObjects.Elements.Serialization.EncodeMember": begin
-                lPosition := a;
-                var lName := a.GetParameter(0);
-                writeLn($"lName.ToString {lName.ToString}");
-                //lValue := new IfStatement()
-                lValue := new ProcValue(new ParamValue(0), "EncodeField", nil, false, [p.Name+"."+lName.ToString,
-                                                                                       new IdentifierValue(new IdentifierValue(p.Name), lName.ToString)]);
-                break;
-              end;
+        var (lEncoderFunction, lEncoderType) := GetCoderFunctionName(p.Type);
 
-            "RemObjects.Elements.Serialization.Encode": begin
-                var lParameter := a.GetParameter(0) as DataValue;
-                if lParameter.Value is Boolean then begin
-                  if not Boolean(lParameter.Value) then
-                    continue PropertiesLoop;
-                end
-                else begin
-                  lValue := new ProcValue(new ParamValue(0), "EncodeField", nil, false, [lParameter.ToString, new IdentifierValue(p.Name)]);
-                end;
-                break;
-              end;
-          end;
+        if not assigned(lEncoderFunction) then begin
+          fServices.EmitWarning(p, $"Type '{p.Type.Fullname}' for property '{p.Name}' is not encodable");
+          continue;
         end;
 
-        if not assigned(lValue) then
-          lValue := new ProcValue(new ParamValue(0), "EncodeField", nil, false, [p.Name, new IdentifierValue(p.Name)]);
+        var lParameterName := AdjustName(p.Name);
+
+        //for i := 0 to p.AttributeCount-1 do begin
+          //var a := p.GetAttribute(i);
+          //case a.Type.Fullname of
+            //"RemObjects.Elements.Serialization.EncodeMember": begin
+                //lPosition := a;
+                //var lName := a.GetParameter(0);
+                ////writeLn($"lName.ToString {lName.ToString}");
+                ////lValue := new IfStatement()
+                //lValue := new ProcValue(new ParamValue(0), "EncodeField", nil, false, [AdjustName(p.Name)+"."+AdjustName(lName.ToString),
+                                                                                       //new IdentifierValue(new IdentifierValue(p.Name), lName.ToString)]);
+                //break;
+              //end;
+
+            //"RemObjects.Elements.Serialization.Encode": begin
+                //var lParameter := a.GetParameter(0) as DataValue;
+                //if lParameter.Value is Boolean then begin
+                  //if not Boolean(lParameter.Value) then
+                    //continue PropertiesLoop;
+                //end
+                //else begin
+                  //lValue := new ProcValue(new ParamValue(0), "EncodeField", nil, false, [lParameter.ToString, new IdentifierValue(p.Name)]);
+                //end;
+                //break;
+              //end;
+          //end;
+        //end;
+
+        case lEncoderFunction of
+          //"Object": begin
+              //lValue := new ProcValue(new ParamValue(0), "Encode"+lEncoderFunction, nil, [lParameterName, new IdentifierValue(p.Name)]);
+            //end;
+          "Array", "List": begin
+              lValue := new ProcValue(new ParamValue(0), "Encode"+lEncoderFunction, [lEncoderType], [lParameterName, new IdentifierValue(p.Name)]);
+            end;
+          else begin
+              lValue := new ProcValue(new ParamValue(0), "Encode"+lEncoderFunction, nil, [lParameterName, new IdentifierValue(p.Name)]);
+            end;
+        end;
+
+        //var lValue := case lEncoderFunction in ["Object", "Array", "List"] then
+          //new BinaryValue(new ProcValue(new ParamValue(0), "Encode"+lEncoderFunction, nil, false, [lParameterName,
+                                                                                                   //new TypeOfValue(lDecoderType)]),
+                          //new TypeValue(p.Type),
+                          //BinaryOperator.As)
+        //else
+          //new ProcValue(new ParamValue(0), "Encode"+lDecoderFunction, nil, false, [lParameterName]);
+
+        //if not assigned(lValue) then
+          //lValue := new ProcValue(new ParamValue(0), "EncodeField", nil, false, [AdjustName(p.Name), new IdentifierValue(p.Name)]);
         var lStatement := new StandaloneStatement(lValue);
         if assigned(lPosition) then
           lStatement.Position := lPosition;
@@ -126,6 +171,10 @@ type
       lEncode.ReplaceMethodBody(lBody);
 
     end;
+
+    //
+    // DECODE
+    //
 
     method ImplementDecode;
     begin
@@ -159,63 +208,19 @@ type
         if p.ReadOnly then
           continue;
 
-        var lType := p.Type;
-        while lType is ILinkType do
-          lType := (lType as ILinkType).SubType;
-        while lType is IRemappedType do
-          lType := (lType as IRemappedType).RealType;
-        while lType is ILinkType do
-          lType := (lType as ILinkType).SubType;
+        var lValue: Value;
+        var lPosition: IPosition := nil;
 
         //Log($"p.Type {p.Type.Fullname}, {lType.Fullname}");
 
-        var lDecoderFunction: String;
-        var lDecoderType: IType;
-        case lType.Fullname of
-          "System.String": lDecoderFunction := "String";
-
-          "RemObjects.Elements.RTL.Guid",
-          "System.Guid": lDecoderFunction := "Guid";
-
-          "RemObjects.Elements.RTL.DateTime",
-          "System.DateTime": lDecoderFunction := "DateTime";
-
-          "System.Byte": lDecoderFunction := "UInt8";
-          "System.SByte": lDecoderFunction := "Int8";
-          "System.Int16": lDecoderFunction := "Int16";
-          "System.Int32": lDecoderFunction := "Int32";
-          "System.Int64", "System.IntPtr": lDecoderFunction := "Int64";
-          "System.UInt16": lDecoderFunction := "UInt16";
-          "System.UInt32": lDecoderFunction := "UInt32";
-          "System.UInt64", "System.UIntPtr": lDecoderFunction := "UInt64";
-
-          "System.Single": lDecoderFunction := "Single";
-          "System.Double": lDecoderFunction := "Double";
-          "System.Boolean": lDecoderFunction := "Boolean";
-
-          else begin
-            if IsDecodable(lType) then begin
-              lDecoderFunction := "Object";
-              lDecoderType := lType;
-              //Log($"Decode: treating '{lType.Fullname}' as decodale object");
-            end
-            else if lType.IsReferenceType then begin
-              //Log($"Decode: treating '{lType.Fullname}' as object, but its not decodable");
-            end
-            else begin
-              //Log($"Decode: treating '{lType.Fullname}' is not an object and not decodable");
-            end;
-          end;
-        end;
-
-        //Log($"lDecoderFunction {p.Name}: {lType.Fullname} ({lType.IsReferenceType} {lType.IsValueType}) -> {lDecoderFunction}");
+        var (lDecoderFunction, lDecoderType) := GetCoderFunctionName(p.Type);
 
         if not assigned(lDecoderFunction) then begin
-          fServices.EmitWarning(p, $"Type '{lType.Fullname}' for property '{p.Name}' is not decodable");
+          fServices.EmitWarning(p, $"Type '{p.Type.Fullname}' for property '{p.Name}' is not decodable");
           continue;
         end;
 
-        var lParameterName: String;
+        var lParameterName := AdjustName(p.Name);
 
         for i := 0 to p.AttributeCount-1 do begin
           var a := p.GetAttribute(i);
@@ -235,19 +240,91 @@ type
           end;
         end;
 
-        var lValue := if lDecoderFunction = "Object"/*) and assigned(lDecoderType)*/ then
-          new BinaryValue(new ProcValue(new ParamValue(0), "Decode"+lDecoderFunction, nil, false, [coalesce(lParameterName, p.Name),
-                                                                                                   new TypeOfValue(lDecoderType)]),
-                          new TypeValue(p.Type),
-                          BinaryOperator.As)
-        else
-          new ProcValue(new ParamValue(0), "Decode"+lDecoderFunction, nil, false, [coalesce(lParameterName, p.Name)]);
+        case lDecoderFunction of
+          "Object": begin
+              lValue := new BinaryValue(new ProcValue(new ParamValue(0), "Decode"+lDecoderFunction, nil, [lParameterName, new TypeOfValue(lDecoderType)]),
+                                        new TypeValue(p.Type),
+                                        BinaryOperator.As)
+            end;
+          "Array", "List": begin
+              Log($"""Decode""+lDecoderFunction {"Decode"+lDecoderFunction}");
+              lValue := new BinaryValue(new ProcValue(new ParamValue(0), "Decode"+lDecoderFunction, [lDecoderType], [lParameterName/*, new TypeOfValue(lDecoderType)*/]),
+                                        new TypeValue(p.Type),
+                                        BinaryOperator.As)
+            end;
+          else begin
+              lValue := new ProcValue(new ParamValue(0), "Decode"+lDecoderFunction, nil, [lParameterName]);
+            end;
+        end;
 
-        var lStatement := new AssignmentStatement(new IdentifierValue(p.Name),lValue);
+        var lStatement := new AssignmentStatement(new IdentifierValue(p.Name), lValue);
+        if assigned(lPosition) then
+          lStatement.Position := lPosition;
         lBody.Add(lStatement);
       end;
       lDecode.ReplaceMethodBody(lBody);
 
+    end;
+
+    method GetCoderFunctionName(aType: IType): tuple of (String, IType);
+    begin
+
+      method FlattenType(aType: IType): IType;
+      begin
+        while aType is ILinkType do
+          aType := (aType as ILinkType).SubType;
+        while aType is IRemappedType do
+          aType := (aType as IRemappedType).RealType;
+        while aType is ILinkType do
+          aType := (aType as ILinkType).SubType;
+        result := aType;
+      end;
+
+      aType := FlattenType(aType);
+
+      var lCoderFunction: String;
+      var lCoderType: IType;
+      case aType.Fullname of
+        "System.String": lCoderFunction := "String";
+
+        "RemObjects.Elements.RTL.Guid",
+        "System.Guid": lCoderFunction := "Guid";
+
+        "RemObjects.Elements.RTL.DateTime",
+        "System.DateTime": lCoderFunction := "DateTime";
+
+        "System.Byte": lCoderFunction := "UInt8";
+        "System.SByte": lCoderFunction := "Int8";
+        "System.Int16": lCoderFunction := "Int16";
+        "System.Int32": lCoderFunction := "Int32";
+        "System.Int64", "System.IntPtr": lCoderFunction := "Int64";
+        "System.UInt16": lCoderFunction := "UInt16";
+        "System.UInt32": lCoderFunction := "UInt32";
+        "System.UInt64", "System.UIntPtr": lCoderFunction := "UInt64";
+
+        "System.Single": lCoderFunction := "Single";
+        "System.Double": lCoderFunction := "Double";
+        "System.Boolean": lCoderFunction := "Boolean";
+        else begin
+          if IsDecodable(aType) then begin
+            lCoderFunction := "Object";
+            lCoderType := aType;
+            //Log($"Decode: treating '{lType.Fullname}' as decodale object");
+          end
+          else if aType is var lArrayType: IArrayType then begin
+            lCoderFunction := "Array";
+            lCoderType := FlattenType(lArrayType.SubType);
+            writeLn($"lCoderType {lCoderType}");
+            //writeLn($"lCoderType {lCoderType.Fullname}");
+            //if lCoderType is then
+          end
+          else begin
+            //Log($"lType {lType}");
+            //Log($"lType.Fullname {lType.Fullname}");
+          end;
+        end;
+      end;
+      result := (lCoderFunction, lCoderType);
     end;
 
     method GetCodableProperties: sequence of IPropertyDefinition; iterator;
@@ -258,7 +335,64 @@ type
         // Todo: check if it can be serialized
         yield p;
       end;
+    end;
 
+    method AdjustName(aName: String): String;
+    begin
+      result := case fNamingStyle of
+        NamingStyle.AsIs: aName;
+        NamingStyle.lowercase: aName:ToLowerInvariant;
+        NamingStyle.UPPERCASE: aName:ToUpperInvariant;
+        NamingStyle.PascalCase: ConvertToPascalCase(aName);
+        NamingStyle.camelCase: ConvertToCamelCase(aName);
+        else raise new Exception($"The '{fNamingStyle}' naming style is not implemented yet");
+      end;
+    end;
+
+    method ConvertToPascalCase(aName: String): String;
+    begin
+      var lChars := aName.ToCharArray;
+      var i := 0;
+      lChars[i] := Char.ToUpperInvariant(lChars[i]);
+      while i < length(lChars) do begin
+        if (lChars[i] = 'I') and (i < length(lChars)) then begin
+          if (i = length(lChars)-2) and (lChars[i+1] = "d") then begin
+            lChars[i+1] := 'D';
+            break;
+          end
+        end;
+        inc(i);
+      end;
+      result := new String(lChars);
+    end;
+
+    method ConvertToCamelCase(aName: String): String;
+    begin
+      if length(aName) = 0 then
+        exit aName;
+      var lChars := aName.ToCharArray;
+      var i := 0;
+      while i < length(lChars) do begin
+        if Char.IsUpper(lChars[i]) then begin
+          if (i = 0) then
+            lChars[i] := Char.ToLowerInvariant(lChars[i]);
+          inc(i);
+          if (i < length(lChars)) and Char.IsUpper(lChars[i]) then begin
+            while (i < length(lChars)-1) and Char.IsUpper(lChars[i]) and Char.IsUpper(lChars[i+1]) do begin
+              lChars[i] := Char.ToLowerInvariant(lChars[i]);
+              inc(i);
+            end;
+            if (i = length(lChars)-1) and Char.IsUpper(lChars[i]) then begin
+              lChars[i] := Char.ToLowerInvariant(lChars[i]);
+              inc(i);
+            end;
+          end;
+        end;
+        while (i < length(lChars)) and not Char.IsUpper(lChars[i]) do begin
+          inc(i);
+        end;
+      end;
+      result := new String(lChars);
     end;
 
     method AddInterface(aName: String);

@@ -16,6 +16,19 @@ type
       result.Decode(self);
     end;
 
+    method DecodeArray<T>(aName: String): array of T;
+    begin
+      if DecodeArrayStart(aName) then begin
+        result := DecodeArrayElements<T>(aName);
+        DecodeArrayEnd(aName);
+      end;
+    end;
+
+    method DecodeList<T>(aName: String): List<T>;
+    begin
+      raise new NotImplementedException("DecodeList<T>");
+    end;
+
     method DecodeObject(aName: String; aType: &Type): IDecodable;
     begin
       if DecodeObjectStart(aName) then begin
@@ -116,11 +129,60 @@ type
       result := DecodeDouble(aName);
     end;
 
-    method DecodeString(aName: String): nullable String; abstract;
+    method DecodeString(aName: String): String; abstract;
 
     method DecodeObjectType(aName: String): String; virtual; empty;
     method DecodeObjectStart(aName: String): Boolean; abstract;
     method DecodeObjectEnd(aName: String); abstract;
+
+    method DecodeArrayStart(aName: String): Boolean; abstract;
+    method DecodeArrayElements<T>(aName: String): array of T; abstract;
+    method DecodeArrayEnd(aName: String); abstract;
+
+    method DecodeArrayElement<T>(aName: String): Object; virtual;
+    begin
+      case typeOf(T) of
+        DateTime, PlatformDateTime: result := DecodeDateTime(nil);
+        String: result := DecodeString(nil);
+        Int8: result := DecodeInt8(nil);
+        Int16: result := DecodeInt16(nil);
+        Int32: result := DecodeInt32(nil);
+        Int64: result := DecodeInt64(nil);
+        IntPtr: result := DecodeInt64(nil) as IntPtr;
+        UInt8: result := DecodeUInt8(nil);
+        UInt16: result := DecodeUInt16(nil);
+        UInt32: result := DecodeUInt32(nil);
+        UInt64: result := DecodeUInt64(nil);
+        UIntPtr: result := DecodeUInt64(nil) as UIntPtr;
+        Boolean: result := DecodeBoolean(nil);
+        Single: result := DecodeSingle(nil);
+        Double: result := DecodeDouble(nil);
+        Guid, PlatformGuid: result := DecodeGuid(nil);
+        else begin
+          //result := Decode<T>; // E210 Generic parameter doesn't fulfill constraint "IDecodable" for "T"
+          raise new CodingExeption($"Type '{typeOf(T)}' for array or list '{aName}' is not decodable.");
+        end;
+      end;
+    end;
+
+    method DecodeListStart(aName: String): Boolean; virtual;
+    begin
+      result := DecodeArrayStart(aName);
+    end;
+
+    method DecodeListElements<T>(aName: String): List<T>; virtual;
+    begin
+      result := DecodeArrayElements<T>(aName).ToList;
+    end;
+
+    method DecodeListEnd(aName: String); virtual;
+    begin
+      DecodeArrayEnd(aName);
+    end;
+
+
+    //method DecodeListStart(aName: String); abstract;
+    //method DecodeListEnd(aName: String); abstract;
 
   private
 

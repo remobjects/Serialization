@@ -8,49 +8,80 @@ type
   public
     class method Main(args: array of String): Int32;
     begin
+      try
       // add your own code here
-      writeLn('The magic happens here.');
+        writeLn('The magic happens here.');
 
-      var f := new Foo(Name := "test",
-                       Age := 25,
-                       Date := DateTime.UtcNow.AddDays(30),
-                       Sub := new Bar2(Street := "Happy", Number := 5, ID := Guid.NewGuid, Isbar2 := true),
-                       //Sub2 := new Baz
-                       );
+        var f := new Foo(Name := "test",
+                         Age := 25,
+                         DateOfBirth := DateTime.UtcNow.AddDays(30),
+                         Sub := new Bar2(Street := "Happy", Number := 5, ID := Guid.NewGuid, Isbar2 := true),
+                         Arr := ["Hello", "World"],
+                         Arr2 := [1,2],
+                         //Arr3 := [new Bar(Street := "Bar1"),
+                                  //new Bar2(Street := "Bar2")],
+                         //Sub2 := new Baz
+                         );
 
-      var j := new JsonCoder;
-      j.Encode(f);
-      Log($"{j}");
-      //var x := new XmlCoder;
-      //x.Encode(f);
-      //Log($"{x}");
+        var j := new JsonCoder;
+        j.Encode(f);
+        Log($"---");
+        Log($"{j}");
+        Log($"---");
+        var x := new XmlCoder;
+        x.Encode(f);
+        Log($"{x}");
+        Log($"---");
 
-      //var f2 := x.Decode(typeOf(Foo)) as Foo;
-      //var j2 := new JsonCoder;
-      //j2.Encode(f2);
-      //Log($"{j2}");
+        //var f2 := x.Decode(typeOf(Foo)) as Foo;
+        //var j2 := new JsonCoder;
+        //j2.Encode(f2);
+        //Log($"{j2}");
 
-      //var f3 := j.Decode(typeOf(Foo)) as Foo;
-      var f3 := j.Decode<Foo> as Foo;
-      var j3 := new JsonCoder;
-      j3.Encode(f3);
-      Log($"{j3}");
+        ////var f3 := j.Decode(typeOf(Foo)) as Foo;
+        //var f3 := j.Decode<Foo> as Foo;
+        //var j3 := new JsonCoder;
+        //j3.Encode(f3)
+        //Log($"{j3}");
+
+        var f4 := x.Decode<Foo> as Foo;
+        var j4 := new JsonCoder;
+        j4.Encode(f4);
+        Log($"{j4}");
+
+      except
+        on E: Exception do
+          writeLn(E);
+      end;
 
     end;
 
   end;
 
-  [Codable]
+  [Codable(NamingStyle.PascalCase)]
   Foo = public class
   public
 
     property Name: String;
     //[EncodeMember("Max")]
     property Age: Integer;
-    property Date: DateTime;
+    property DateOfBirth: DateTime;
+
+    property id: String;
+    property fooBar: String;
+
+    //property ID: String;
+    property HtmlTest: String;
+    property IOStream: String;
+    //property SessionID: String;
+    property sessionId: String;
 
     property Sub: Bar;
     property Sub2: Baz;
+
+    property Arr: array of String;
+    property Arr2: array of Integer;
+    property Arr3: array of Bar;
 
     //property Bars := new List<Bar>;
 
@@ -79,10 +110,10 @@ type
     property f: Double;
     property g: Boolean;
 
-    constructor;
-    begin
-      writeLn("ctor");
-    end;
+    //constructor;
+    //begin
+      //writeLn("ctor");
+    //end;
 
   end;
 
@@ -91,10 +122,10 @@ type
   public
     property Isbar2: Boolean;
 
-    constructor;
-    begin
-      writeLn("ctor Bar2");
-    end;
+    //constructor;
+    //begin
+      //writeLn("ctor Bar2");
+    //end;
 
   end;
 
