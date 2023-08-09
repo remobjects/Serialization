@@ -18,8 +18,8 @@ type
                          Sub := new Bar2(Street := "Happy", Number := 5, ID := Guid.NewGuid, Isbar2 := true),
                          Arr := ["Hello", "World"],
                          Arr2 := [1,2],
-                         //Arr3 := [new Bar(Street := "Bar1"),
-                                  //new Bar2(Street := "Bar2")],
+                         Arr3 := [new Bar(Street := "Bar1"),
+                                  new Bar2(Street := "Bar2")],
                          //Sub2 := new Baz
                          );
 

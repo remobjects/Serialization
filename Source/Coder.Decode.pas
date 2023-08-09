@@ -158,10 +158,7 @@ type
         Single: result := DecodeSingle(nil);
         Double: result := DecodeDouble(nil);
         Guid, PlatformGuid: result := DecodeGuid(nil);
-        else begin
-          //result := Decode<T>; // E210 Generic parameter doesn't fulfill constraint "IDecodable" for "T"
-          raise new CodingExeption($"Type '{typeOf(T)}' for array or list '{aName}' is not decodable.");
-        end;
+        else result := Decode(typeOf(T));
       end;
     end;
 
