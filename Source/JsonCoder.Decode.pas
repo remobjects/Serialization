@@ -65,8 +65,6 @@ type
     begin
       if DoGetValue(aName) is JsonArray then begin
         Hierarchy.Push(DoGetValue(aName));
-        Log($"pushed");
-        Log($"Current {Current}");
       end;
       result := true;
     end;
@@ -95,12 +93,10 @@ type
 
     method DoGetValue(aName: nullable String): JsonNode;
     begin
-      Log($"Current {Current}");
       if assigned(aName) and (Current is JsonObject) then
         result := Current[aName];
       //else
         //result := Current;
-      Log($"result for {aName} is {result}");
     end;
 
   end;
