@@ -75,10 +75,7 @@ type
 
     method DecodeUIntPtr(aName: String): nullable UIntPtr; virtual;
     begin
-      var lIntPtr := Convert.TryToIntPtr(DecodeString(aName));
-      if assigned(lIntPtr) then // E26700: Passing a nil nullable IntPtr as nullable UInt64 converts to 0
-        result := lIntPtr;
-      //result := Convert.TryToUInt64(DecodeString(aName)); {$HINT Implement properly/lossles}
+      result := Convert.TryToUIntPtr(DecodeString(aName));
     end;
 
     method DecodeInt64(aName: String): nullable Int64; virtual;
@@ -88,8 +85,7 @@ type
 
     method DecodeUInt64(aName: String): nullable UInt64; virtual;
     begin
-      result := Convert.TryToInt64(DecodeString(aName)); {$HINT Implement properly}
-      //result := Convert.TryToUInt64(DecodeString(aName));
+      result := Convert.TryToUInt64(DecodeString(aName));
     end;
 
     method DecodeDouble(aName: String): nullable Double; virtual;
