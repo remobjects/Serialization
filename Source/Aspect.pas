@@ -8,14 +8,23 @@ uses
 type
   NamingStyle = public enum(AsIs, PascalCase, camelCase, lowercase, UPPERCASE);
 
-  Codable = public class(System.Attribute, IBaseAspect, ITypeInterfaceDecorator)
+  Codable = public class(System.Attribute, IBaseAspect, ITypeInterfaceDecorator, ITypeImplementationDecorator)
   public
 
     method HandleInterface(aServices: IServices; aType: ITypeDefinition); virtual;
     begin
       var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
-      lCodableHelpers.ImplementEncode;
-      lCodableHelpers.ImplementDecode;
+      fNeedToImplementEncode := lCodableHelpers.AddIEncode;
+      fNeedToImplementDecode := lCodableHelpers.AddIDecode;
+    end;
+
+    method HandleImplementation(aServices: IServices; aType: ITypeDefinition); virtual;
+    begin
+      var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
+      if fNeedToImplementEncode then
+        lCodableHelpers.ImplementEncode;
+      if fNeedToImplementDecode then
+        lCodableHelpers.ImplementDecode;
     end;
 
     constructor; empty;
@@ -27,6 +36,10 @@ type
 
     property NamingStyle: NamingStyle;
 
+  protected
+
+    fNeedToImplementEncode, fNeedToImplementDecode: Boolean;
+
   end;
 
   Encodable = public class(Codable)
@@ -35,8 +48,16 @@ type
     method HandleInterface(aServices: IServices; aType: ITypeDefinition); override;
     begin
       var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
-      lCodableHelpers.ImplementEncode;
+      fNeedToImplementEncode := lCodableHelpers.AddIEncode;
     end;
+
+    method HandleImplementation(aServices: IServices; aType: ITypeDefinition); override;
+    begin
+      var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
+      if fNeedToImplementEncode then
+        lCodableHelpers.ImplementEncode;
+    end;
+
 
   end;
 
@@ -46,7 +67,14 @@ type
     method HandleInterface(aServices: IServices; aType: ITypeDefinition); override;
     begin
       var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
-      lCodableHelpers.ImplementDecode;
+      fNeedToImplementDecode := lCodableHelpers.AddIDecode;
+    end;
+
+    method HandleImplementation(aServices: IServices; aType: ITypeDefinition); override;
+    begin
+      var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
+      if fNeedToImplementDecode then
+        lCodableHelpers.ImplementDecode;
     end;
 
   end;
@@ -73,27 +101,62 @@ type
     // ENCODE
     //
 
-    method ImplementEncode;
+    method AddIEncode: Boolean;
     begin
       AddInterface("RemObjects.Elements.Serialization.IEncodable");
 
       var lExisting := fType.GetMethod("Encode", ["RemObjects.Elements.Serialization.Coder"], [ParameterModifier.In]);
       if assigned(lExisting) then
-        exit;
+        exit false;
 
       var lEncode := fType.AddMethod("Encode", fServices.GetType("System.Void"), false);
       lEncode.AddParameter("aCoder", ParameterModifier.In, fServices.GetType("RemObjects.Elements.Serialization.Coder"));
 
+      if IsEncodable(fType.ParentType) then
+        lEncode.Virtual := VirtualMode.Override
+      else
+        lEncode.Virtual := VirtualMode.Virtual;
+
+      result := true;
+    end;
+
+    method AddIDecode: Boolean;
+    begin
+      AddInterface("RemObjects.Elements.Serialization.IDecodable");
+
+      var lExisting := fType.GetMethod("Decode", ["RemObjects.Elements.Serialization.Coder"], [ParameterModifier.In]);
+      if assigned(lExisting) then
+        exit false;
+
+      var lDecode := fType.AddMethod("Decode", fServices.GetType("System.Void"), false);
+      lDecode.AddParameter("aCoder", ParameterModifier.In, fServices.GetType("RemObjects.Elements.Serialization.Coder"));
+
+      if IsDecodable(fType.ParentType) then
+        lDecode.Virtual := VirtualMode.Override
+      else
+        lDecode.Virtual := VirtualMode.Virtual;
+
+      result := true;
+    end;
+
+    //
+    // ENCODE
+    //
+
+    method ImplementEncode;
+    begin
+      var lEncode := fType.GetMethod("Encode", ["RemObjects.Elements.Serialization.Coder"], [ParameterModifier.In]);
+      if not assigned(lEncode) then
+        raise new Exception("Encode method not found");
+
+      //var lEncode := fType.AddMethod("Encode", fServices.GetType("System.Void"), false);
+      //lEncode.AddParameter("aCoder", ParameterModifier.In, fServices.GetType("RemObjects.Elements.Serialization.Coder"));
+
       var lBody := new BeginStatement;
 
-      if IsEncodable(fType.ParentType) then begin
-        //writeLn($"ParentType {fType.ParentType.Fullname} of {fType.Fullname} is encodable");
+      if lEncode.Virtual = VirtualMode.Override then begin
         var lInheritedCall := new ProcValue(new SelfValue, "Encode", new IdentifierValue("aCoder"), &Inherited := true);
         lBody.Add(new StandaloneStatement(lInheritedCall));
-        lEncode.Virtual := VirtualMode.Override;
-      end
-      else begin
-        lEncode.Virtual := VirtualMode.Virtual;
       end;
 
       //var lCoder := fServices.GetType("RemObjects.Elements.Serialization.Coder");
@@ -168,8 +231,8 @@ type
           lStatement.Position := lPosition;
         lBody.Add(lStatement);
       end;
-      lEncode.ReplaceMethodBody(lBody);
 
+      (lEncode as IMethodDefinition).ReplaceMethodBody(lBody);
     end;
 
     //
@@ -178,25 +241,19 @@ type
 
     method ImplementDecode;
     begin
-      AddInterface("RemObjects.Elements.Serialization.IDecodable");
+      var lDecode := fType.GetMethod("Decode", ["RemObjects.Elements.Serialization.Coder"], [ParameterModifier.In]);
+      if not assigned(lDecode) then
+        raise new Exception("Decode method not found");
 
-      var lExisting := fType.GetMethod("Decode", ["RemObjects.Elements.Serialization.Coder"], [ParameterModifier.In]);
-      if assigned(lExisting) then
-        exit;
-
-      var lDecode := fType.AddMethod("Decode", fServices.GetType("System.Void"), false);
-      lDecode.AddParameter("aCoder", ParameterModifier.In, fServices.GetType("RemObjects.Elements.Serialization.Coder"));
+      //var lDecode := fType.AddMethod("Decode", fServices.GetType("System.Void"), false);
+      //lDecode.AddParameter("aCoder", ParameterModifier.In, fServices.GetType("RemObjects.Elements.Serialization.Coder"));
 
       var lBody := new BeginStatement;
 
-      if IsDecodable(fType.ParentType) then begin
+      if lDecode.Virtual = VirtualMode.Override then begin
         //writeLn($"ParentType {fType.ParentType.Fullname} of {fType.Fullname} is decodable");
         var lInheritedCall := new ProcValue(new SelfValue, "Decode", new IdentifierValue("aCoder"), &Inherited := true);
         lBody.Add(new StandaloneStatement(lInheritedCall));
-        lDecode.Virtual := VirtualMode.Override;
-      end
-      else begin
-        lDecode.Virtual := VirtualMode.Virtual;
       end;
 
       //var lCoder := fServices.GetType("RemObjects.Elements.Serialization.Coder");
@@ -261,8 +318,8 @@ type
           lStatement.Position := lPosition;
         lBody.Add(lStatement);
       end;
-      lDecode.ReplaceMethodBody(lBody);
 
+      (lDecode as IMethodDefinition).ReplaceMethodBody(lBody);
     end;
 
     method GetCoderFunctionName(aType: IType): tuple of (String, IType);
@@ -321,14 +378,13 @@ type
             if (lType.Name = "Nullable`1") and (lGeneric.ParameterCount = 1) then begin
               var lNestedType := lGeneric.GetParameter(0);
               var lNestedCoderFunction := GetCoderFunctionName(lNestedType);
-              Log($"lNestedCoderFunction '{lNestedCoderFunction}'");
-              if assigned(lNestedCoderFunction) then
+              if assigned(lNestedCoderFunction[0]) then
                 lCoderFunction := /*"Nullable"+*/lNestedCoderFunction[0];
             end;
 
           end
           else begin
-            Log($"Unsupported type {aType} {aType.Fullname}");
+            //Log($"Unsupported type {aType} {aType.Fullname}");
           end;
         end;
       end;
