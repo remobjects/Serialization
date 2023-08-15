@@ -113,7 +113,10 @@ type
 
     method EncodeDouble(aName: String; aValue: nullable Double); virtual;
     begin
-      EncodeString(aName, aValue:ToString); {$HINT Needs to be Invariant!}
+      if assigned(aValue) then
+        EncodeString(aName, Convert.ToStringInvariant(aValue))
+      else if ShouldEncodeNil then
+        EncodeNil(aName);
     end;
 
     method EncodeBoolean(aName: String; aValue: nullable Boolean); virtual;
