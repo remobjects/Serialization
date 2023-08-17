@@ -9,6 +9,7 @@ type
       result := DoGetValue(aName):StringValue
     end;
 
+    {$IF NOT COOPER}
     method DecodeIntPtr(aName: String): nullable IntPtr; override;
     begin
       result := DoGetValue(aName):IntegerValue
@@ -18,6 +19,7 @@ type
     begin
       result := DoGetValue(aName):IntegerValue {$HINT Handle UInt properly}
     end;
+    {$ENDIF}
 
     method DecodeInt64(aName: String): nullable Int64; override;
     begin

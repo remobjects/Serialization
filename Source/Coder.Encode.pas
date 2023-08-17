@@ -30,12 +30,16 @@ type
           Int16: EncodeInt16(aName, aObject as Int16);
           Int32: EncodeInt32(aName, aObject as Int32);
           Int64: EncodeInt64(aName, aObject as Int64);
-          IntPtr: EncodeInt64(aName, aObject as IntPtr as Int64);
+          {$IF NOT COOPER}
+          IntPtr: EncodeIntPtr(aName, aObject as IntPtr);
+          {$ENDIF}
           UInt8: EncodeUInt8(aName, aObject as UInt8);
           UInt16: EncodeUInt16(aName, aObject as UInt16);
           UInt32: EncodeUInt32(aName, aObject as UInt32);
           UInt64: EncodeUInt64(aName, aObject as UInt64);
-          UIntPtr: EncodeUInt64(aName, aObject as UIntPtr as UInt64);
+          {$IF NOT COOPER}
+          UIntPtr: EncodeUIntPtr(aName, aObject as UIntPtr);
+          {$ENDIF}
           Boolean: EncodeBoolean(aName, aObject as Boolean);
           Single: EncodeSingle(aName, aObject as Single);
           Double: EncodeDouble(aName, aObject as Double);
@@ -91,6 +95,7 @@ type
       EncodeString(aName, aValue:ToISO8601String)
     end;
 
+    {$IF NOT COOPER}
     method EncodeIntPtr(aName: String; aValue: nullable IntPtr); virtual; // E26700: Passing a nil nullable IntPtr as nullable UInt64 converts to 0
     begin
       EncodeString(aName, aValue:ToString);
@@ -100,6 +105,7 @@ type
     begin
       EncodeString(aName, aValue:ToString);
     end;
+    {$ENDIF}
 
     method EncodeInt64(aName: String; aValue: nullable Int64); virtual;
     begin

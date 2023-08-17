@@ -12,6 +12,7 @@ type
         EncodeNil(aName);
     end;
 
+    {$IF NOT COOPER}
     method EncodeIntPtr(aName: String; aValue: nullable IntPtr); override;
     begin
       if assigned(aValue) then
@@ -27,6 +28,7 @@ type
       else if ShouldEncodeNil then
         EncodeNil(aName);
     end;
+    {$ENDIF}
 
     method EncodeInt64(aName: String; aValue: nullable Int64); override;
     begin

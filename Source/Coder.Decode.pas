@@ -68,6 +68,7 @@ type
       result := DateTime.TryParseISO8601(DecodeString(aName));
     end;
 
+    {$IF NOT COOPER}
     method DecodeIntPtr(aName: String): nullable IntPtr; virtual;
     begin
       result := Convert.TryToIntPtr(DecodeString(aName));
@@ -77,6 +78,7 @@ type
     begin
       result := Convert.TryToUIntPtr(DecodeString(aName));
     end;
+    {$ENDIF}
 
     method DecodeInt64(aName: String): nullable Int64; virtual;
     begin
@@ -151,22 +153,30 @@ type
     method DecodeArrayElement<T>(aName: String): Object; virtual;
     begin
       case typeOf(T) of
-        DateTime, PlatformDateTime: result := DecodeDateTime(nil);
+        DateTime: result := DecodeDateTime(nil);
         String: result := DecodeString(nil);
         Int8: result := DecodeInt8(nil);
         Int16: result := DecodeInt16(nil);
         Int32: result := DecodeInt32(nil);
         Int64: result := DecodeInt64(nil);
+        {$IF NOT COOPER}
         IntPtr: result := DecodeInt64(nil) as IntPtr;
+        {$ENDIF}
         UInt8: result := DecodeUInt8(nil);
         UInt16: result := DecodeUInt16(nil);
         UInt32: result := DecodeUInt32(nil);
         UInt64: result := DecodeUInt64(nil);
+        {$IF NOT COOPER}
         UIntPtr: result := DecodeUInt64(nil) as UIntPtr;
+        {$ENDIF}
         Boolean: result := DecodeBoolean(nil);
         Single: result := DecodeSingle(nil);
         Double: result := DecodeDouble(nil);
-        Guid, PlatformGuid: result := DecodeGuid(nil);
+        Guid: result := DecodeGuid(nil);
+        {$IF NOT COOPER} // On these platforms the types are aliased
+        PlatformDateTime: result := DecodeDateTime(nil);
+        PlatformGuid: result := DecodeGuid(nil);
+        {$ENDIF}
         else result := Decode(typeOf(T));
       end;
     end;
