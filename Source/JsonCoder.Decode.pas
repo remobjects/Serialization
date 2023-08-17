@@ -71,6 +71,7 @@ type
       result := true;
     end;
 
+    {$IF NOT ISLAND}
     method DecodeArrayElements<T>(aName: String): array of T; override;
     begin
       if Current is var lJsonArray: JsonArray then begin
@@ -84,6 +85,7 @@ type
         end;
       end;
     end;
+    {$ENDIF}
 
     method DecodeArrayEnd(aName: String); override;
     begin

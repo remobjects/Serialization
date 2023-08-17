@@ -19,7 +19,11 @@ type
     method DecodeArray<T>(aName: String): array of T;
     begin
       if DecodeArrayStart(aName) then begin
+        {$IF NOT ISLAND}
         result := DecodeArrayElements<T>(aName);
+        {$ELSE}
+        raise new CodingExeption($"Decoding of arrays and lists is not (yet) supported on Island.");
+        {$ENDIF}
         DecodeArrayEnd(aName);
       end;
     end;
@@ -147,10 +151,12 @@ type
     method DecodeObjectEnd(aName: String); abstract;
 
     method DecodeArrayStart(aName: String): Boolean; abstract;
+    {$IF NOT ISLAND}
     method DecodeArrayElements<T>(aName: String): array of T; abstract;
+    {$ENDIF}
     method DecodeArrayEnd(aName: String); abstract;
 
-    method DecodeArrayElement<T>(aName: String): Object; virtual;
+    method DecodeArrayElement<T>(aName: String): Object; {$IF NOT ISLAND}virtual;{$ENDIF}
     begin
       case typeOf(T) of
         DateTime: result := DecodeDateTime(nil);
@@ -186,10 +192,12 @@ type
       result := DecodeArrayStart(aName);
     end;
 
+    {$IF NOT ISLAND}
     method DecodeListElements<T>(aName: String): List<T>; virtual;
     begin
       result := DecodeArrayElements<T>(aName).ToList;
     end;
+    {$ENDIF}
 
     method DecodeListEnd(aName: String); virtual;
     begin
@@ -206,10 +214,10 @@ type
     begin
       if not assigned(fTypesCache) then
         fTypesCache := &Type.AllTypes;
-      result := fTypesCache.FirstOrDefault(t -> t.FullName = aName);
+      result := fTypesCache.FirstOrDefault(t -> t./*Full*/Name = aName);
       if not assigned(result) then begin
         fTypesCache := &Type.AllTypes; // load again, maye we have new types now
-        result := fTypesCache.FirstOrDefault(t -> t.FullName = aName);
+        result := fTypesCache.FirstOrDefault(t -> t./*Full*/Name = aName);
       end;
     end;
 

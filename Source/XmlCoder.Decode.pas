@@ -52,6 +52,7 @@ type
       end;
     end;
 
+    {$IF NOT ISLAND}
     method DecodeArrayElements<T>(aName: String): array of T; override;
     begin
       var lElements := Current.ElementsWithName("Element").ToList;
@@ -64,6 +65,7 @@ type
         Hierarchy.Pop;
       end;
     end;
+    {$ENDIF}
 
     method DecodeArrayEnd(aName: String); override;
     begin
