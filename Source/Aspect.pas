@@ -13,14 +13,14 @@ type
 
     method HandleInterface(aServices: IServices; aType: ITypeDefinition); virtual;
     begin
-      var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
+      var lCodableHelpers := new CodableHelpers(aServices, aType, fNamingStyle);
       fNeedToImplementEncode := lCodableHelpers.AddIEncode;
       fNeedToImplementDecode := lCodableHelpers.AddIDecode;
     end;
 
     method HandleImplementation(aServices: IServices; aType: ITypeDefinition); virtual;
     begin
-      var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
+      var lCodableHelpers := new CodableHelpers(aServices, aType, fNamingStyle);
       if fNeedToImplementEncode then
         lCodableHelpers.ImplementEncode;
       if fNeedToImplementDecode then
@@ -31,13 +31,13 @@ type
 
     constructor (aNamingStyle: NamingStyle);
     begin
-      NamingStyle := aNamingStyle;
+      fNamingStyle := aNamingStyle;
     end;
 
-    property NamingStyle: NamingStyle;
 
   protected
 
+    fNamingStyle: NamingStyle;
     fNeedToImplementEncode, fNeedToImplementDecode: Boolean;
 
   end;
@@ -47,13 +47,13 @@ type
 
     method HandleInterface(aServices: IServices; aType: ITypeDefinition); override;
     begin
-      var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
+      var lCodableHelpers := new CodableHelpers(aServices, aType, fNamingStyle);
       fNeedToImplementEncode := lCodableHelpers.AddIEncode;
     end;
 
     method HandleImplementation(aServices: IServices; aType: ITypeDefinition); override;
     begin
-      var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
+      var lCodableHelpers := new CodableHelpers(aServices, aType, fNamingStyle);
       if fNeedToImplementEncode then
         lCodableHelpers.ImplementEncode;
     end;
@@ -66,13 +66,13 @@ type
 
     method HandleInterface(aServices: IServices; aType: ITypeDefinition); override;
     begin
-      var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
+      var lCodableHelpers := new CodableHelpers(aServices, aType, fNamingStyle);
       fNeedToImplementDecode := lCodableHelpers.AddIDecode;
     end;
 
     method HandleImplementation(aServices: IServices; aType: ITypeDefinition); override;
     begin
-      var lCodableHelpers := new CodableHelpers(aServices, aType, NamingStyle);
+      var lCodableHelpers := new CodableHelpers(aServices, aType, fNamingStyle);
       if fNeedToImplementDecode then
         lCodableHelpers.ImplementDecode;
     end;
@@ -80,7 +80,7 @@ type
   end;
 
   //
-  //
+  // CodableHelpers
   //
 
   CodableHelpers = unit class
@@ -177,10 +177,10 @@ type
 
         var lParameterName := AdjustName(p.Name);
 
-        //for i := 0 to p.AttributeCount-1 do begin
-          //var a := p.GetAttribute(i);
-          //case a.Type.Fullname of
-            //"RemObjects.Elements.Serialization.EncodeMember": begin
+        for i := 0 to p.AttributeCount-1 do begin
+          var a := p.GetAttribute(i);
+          case a.Type.Fullname of
+            //"RemObjects.Elements.Serialization.EncodeMemberAttribute": begin
                 //lPosition := a;
                 //var lName := a.GetParameter(0);
                 ////writeLn($"lName.ToString {lName.ToString}");
@@ -190,19 +190,19 @@ type
                 //break;
               //end;
 
-            //"RemObjects.Elements.Serialization.Encode": begin
-                //var lParameter := a.GetParameter(0) as DataValue;
-                //if lParameter.Value is Boolean then begin
-                  //if not Boolean(lParameter.Value) then
-                    //continue PropertiesLoop;
-                //end
-                //else begin
-                  //lValue := new ProcValue(new ParamValue(0), "EncodeField", nil, false, [lParameter.ToString, new IdentifierValue(p.Name)]);
-                //end;
-                //break;
-              //end;
-          //end;
-        //end;
+            "RemObjects.Elements.Serialization.EncodeAttribute": begin
+                var lParameter := a.GetParameter(0) as DataValue;
+                if lParameter.Value is Boolean then begin
+                  if not Boolean(lParameter.Value) then
+                    continue PropertiesLoop;
+                end
+                else begin
+                  lParameterName := lParameter.ToString;
+                end;
+                break;
+              end;
+          end;
+        end;
 
         case lEncoderFunction of
           //"Object": begin
@@ -282,8 +282,17 @@ type
         for i := 0 to p.AttributeCount-1 do begin
           var a := p.GetAttribute(i);
           case a.Type.Fullname of
-            //"RemObjects.Elements.Serialization.EncodeMember":
-            "RemObjects.Elements.Serialization.Encode": begin
+            //"RemObjects.Elements.Serialization.EncodeMemberAttribute": begin
+                //lPosition := a;
+                //var lName := a.GetParameter(0);
+                ////writeLn($"lName.ToString {lName.ToString}");
+                ////lValue := new IfStatement()
+                //lValue := new ProcValue(new ParamValue(0), "EncodeField", nil, false, [AdjustName(p.Name)+"."+AdjustName(lName.ToString),
+                                                                                       //new IdentifierValue(new IdentifierValue(p.Name), lName.ToString)]);
+                //break;
+              //end;
+
+            "RemObjects.Elements.Serialization.EncodeAttribute": begin
                 var lParameter := a.GetParameter(0) as DataValue;
                 if lParameter.Value is Boolean then begin
                   if not Boolean(lParameter.Value) then
@@ -321,6 +330,10 @@ type
 
       (lDecode as IMethodDefinition).ReplaceMethodBody(lBody);
     end;
+
+    //
+    // Helpers
+    //
 
     method GetCoderFunctionName(aType: IType): tuple of (String, IType);
     begin
@@ -413,7 +426,7 @@ type
       end;
     end;
 
-    method ConvertToPascalCase(aName: String): String;
+    method ConvertToPascalCase(aName: String): String; //special handling form ID -> Id
     begin
       var lChars := aName.ToCharArray;
       var i := 0;

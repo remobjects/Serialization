@@ -1,14 +1,14 @@
 ﻿namespace RemObjects.Elements.Serialization;
 
 type
-  EncodeMember = public class(System.Attribute)
-  public
+  //EncodeMemberAttribute = public class(System.Attribute)
+  //public
 
-    constructor(aMemberName: String); empty;
+    //constructor(aMemberName: String); empty;
 
-  end;
+  //end;
 
-  Encode = public class(System.Attribute)
+  EncodeAttribute = public class(System.Attribute)
   public
 
     constructor(aName: String); empty;
