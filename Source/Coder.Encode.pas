@@ -14,47 +14,46 @@ type
 
     end;
 
-    method Encode(aObject: Object);
+    method Encode<T>(aValue: T);
     begin
-      EncodeField(nil, aObject);
+      Encode(nil, aValue);
     end;
 
-    method EncodeField(aName: String; aObject: Object);
+    method Encode<T>(aName: String; aValue: T);
     begin
-      if assigned(aObject) then begin
-        case aObject type of
-          DateTime,
-          PlatformDateTime: EncodeDateTime(aName, aObject as DateTime);
-          String: EncodeString(aName, aObject as String);
-          Int8: EncodeInt8(aName, aObject as Int8);
-          Int16: EncodeInt16(aName, aObject as Int16);
-          Int32: EncodeInt32(aName, aObject as Int32);
-          Int64: EncodeInt64(aName, aObject as Int64);
-          {$IF NOT COOPER}
-          IntPtr: EncodeIntPtr(aName, aObject as IntPtr);
-          {$ENDIF}
-          UInt8: EncodeUInt8(aName, aObject as UInt8);
-          UInt16: EncodeUInt16(aName, aObject as UInt16);
-          UInt32: EncodeUInt32(aName, aObject as UInt32);
-          UInt64: EncodeUInt64(aName, aObject as UInt64);
-          {$IF NOT COOPER}
-          UIntPtr: EncodeUIntPtr(aName, aObject as UIntPtr);
-          {$ENDIF}
-          Boolean: EncodeBoolean(aName, aObject as Boolean);
-          Single: EncodeSingle(aName, aObject as Single);
-          Double: EncodeDouble(aName, aObject as Double);
-          Guid: EncodeGuid(aName, aObject as Guid);
-          else begin
-            if aObject is IEncodable then
-              EncodeObject(aName, aObject as IEncodable)
-            else
-              raise new CodingExeption($"Type '{typeOf(aObject)}' for field or property '{aName}' is not encodable.");
-          end;
+      case typeOf(T) of
+        DateTime: EncodeDateTime(aName, aValue as DateTime);
+        String: EncodeString(aName, aValue as String);
+        Int8: EncodeInt8(aName, aValue as Int8);
+        Int16: EncodeInt16(aName, aValue as Int16);
+        Int32: EncodeInt32(aName, aValue as Int32);
+        Int64: EncodeInt64(aName, aValue as Int64);
+        {$IF NOT COOPER}
+        IntPtr: EncodeIntPtr(aName, aValue as IntPtr);
+        {$ENDIF}
+        uint8: EncodeUInt8(aName, aValue as uint8);
+        UInt16: EncodeUInt16(aName, aValue as UInt16);
+        UInt32: EncodeUInt32(aName, aValue as UInt32);
+        UInt64: EncodeUInt64(aName, aValue as UInt64);
+        {$IF NOT COOPER}
+        UIntPtr: EncodeUIntPtr(aName, aValue as UIntPtr);
+        {$ENDIF}
+        Boolean: EncodeBoolean(aName, aValue as Boolean);
+        Single: EncodeSingle(aName, aValue as Single);
+        Double: EncodeDouble(aName, aValue as Double);
+        Guid: EncodeGuid(aName, aValue as Guid);
+        {$IF NOT COOPER} // On these platforms the types are aliased
+        PlatformDateTime: EncodeDateTime(aName, aValue as DateTime);
+        PlatformGuid: EncodeGuid(aName, aValue as Guid);
+        {$ENDIF}
+        else begin
+          if aValue is IEncodable then
+            EncodeObject(aName, aValue as IEncodable)
+          else if assigned(aName) then
+            raise new CodingExeption($"Type '{typeOf(aValue)}' for field or property '{aName}' is not encodable.")
+          else
+            raise new CodingExeption($"Type '{typeOf(aValue)}' is not encodable.");
         end;
-      end
-      else begin
-        if ShouldEncodeNil then
-          EncodeNil(aName);
       end;
     end;
 
@@ -75,7 +74,7 @@ type
       if assigned(aValue) then begin
         EncodeArrayStart(aName);
         for each e in aValue do
-          EncodeField(nil, e);
+          Encode(nil, e);
         EncodeArrayEnd(aName);
       end
       else if ShouldEncodeNil then begin
