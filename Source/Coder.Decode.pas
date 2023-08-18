@@ -214,10 +214,10 @@ type
     begin
       if not assigned(fTypesCache) then
         fTypesCache := &Type.AllTypes;
-      result := fTypesCache.FirstOrDefault(t -> t./*Full*/Name = aName);
+      result := fTypesCache.FirstOrDefault(t -> t.FullName = aName);
       if not assigned(result) then begin
         fTypesCache := &Type.AllTypes; // load again, maye we have new types now
-        result := fTypesCache.FirstOrDefault(t -> t./*Full*/Name = aName);
+        result := fTypesCache.FirstOrDefault(t -> t.FullName = aName);
       end;
     end;
 
