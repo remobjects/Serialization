@@ -34,7 +34,6 @@ type
       fNamingStyle := aNamingStyle;
     end;
 
-
   protected
 
     fNamingStyle: NamingStyle;
@@ -57,7 +56,6 @@ type
       if fNeedToImplementEncode then
         lCodableHelpers.ImplementEncode;
     end;
-
 
   end;
 
@@ -346,6 +344,10 @@ type
           aType := (aType as IRemappedType).RealType;
         while aType is ILinkType do
           aType := (aType as ILinkType).SubType;
+        while aType is IWrappedNullableType do
+          aType := (aType as IWrappedNullableType).SubType;
+        while aType is INotNullableType do
+          aType := (aType as INotNullableType).SubType;
         result := aType;
       end;
 
