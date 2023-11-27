@@ -203,9 +203,9 @@ type
         end;
 
         case lEncoderFunction of
-          //"Object": begin
-              //lValue := new ProcValue(new ParamValue(0), "Encode"+lEncoderFunction, nil, [lParameterName, new IdentifierValue(p.Name)]);
-            //end;
+          "Object": begin
+              lValue := new ProcValue(new ParamValue(0), "Encode"+lEncoderFunction, nil, [lParameterName, new IdentifierValue(p.Name), new TypeOfValue(lEncoderType)]);
+            end;
           "Array", "List": begin
               lValue := new ProcValue(new ParamValue(0), "Encode"+lEncoderFunction, [lEncoderType], [lParameterName, new IdentifierValue(p.Name)]);
             end;
