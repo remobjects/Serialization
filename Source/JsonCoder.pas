@@ -6,7 +6,7 @@ type
 
     constructor;
     begin
-      constructor withJson(JsonDocument.CreateDocument);
+      constructor withJson(JsonDocument.CreateObject);
     end;
 
     constructor withFile(aFileName: String);
@@ -17,7 +17,7 @@ type
     constructor withJson(aJson: JsonDocument);
     begin
       Json := aJson;
-      Hierarchy.Push(Json.Root as JsonObject);
+      Hierarchy.Push(Json/*.Root*/ as JsonObject);
     end;
 
 
