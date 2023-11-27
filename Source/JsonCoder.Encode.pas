@@ -64,10 +64,13 @@ type
 
     method EncodeGuid(aName: String; aValue: nullable Guid); override;
     begin
-      if assigned(aValue) then
-        DoEncodeValue(aName, aValue.ToString(GuidFormat.Default).ToLowerInvariant as JsonStringValue)
-      else if ShouldEncodeNil then
+      if assigned(aValue) then begin
+        if (aValue ≠ Guid.Empty) or ShouldEncodeDefault then
+          DoEncodeValue(aName, aValue.ToString(GuidFormat.Default).ToLowerInvariant as JsonStringValue);
+      end
+      else if ShouldEncodeNil then begin
         EncodeNil(aName);
+      end;
     end;
 
     method EncodeNil(aName: String); override;
@@ -84,19 +87,21 @@ type
 
   protected
 
-    method EncodeObjectStart(aName: String; aValue: IEncodable); override;
+    method EncodeObjectStart(aName: String; aValue: IEncodable; aExpectedType: &Type := nil); override;
     begin
       if assigned(aName) then begin
         var lObject := new JsonObject;
         Current[aName] := lObject;
         Hierarchy.Push(lObject);
-        lObject["__Type"] := typeOf(aValue).ToString;
+        if typeOf(aValue) ≠ aExpectedType then
+          lObject["__Type"] := typeOf(aValue).ToString;
       end
       else if Current is var lJsonArray: JsonArray then begin
         var lObject := new JsonObject;
         lJsonArray.Add(lObject);
         Hierarchy.Push(lObject);
-        lObject["__Type"] := typeOf(aValue).ToString;
+        if typeOf(aValue) ≠ aExpectedType then
+          lObject["__Type"] := typeOf(aValue).ToString;
       end;
 
       //var lObject := new JsonObject;
@@ -113,7 +118,7 @@ type
 
     method EncodeObjectEnd(aName: String; aValue: IEncodable); override;
     begin
-      if Current ≠ Json.Root then
+      if Current ≠ Json/*.Root*/ then
         Hierarchy.Pop;
     end;
 
@@ -133,7 +138,7 @@ type
 
     method EncodeArrayEnd(aName: String); override;
     begin
-      if Current ≠ Json.Root then
+      if Current ≠ Json/*.Root*/ then
         Hierarchy.Pop;
     end;
 
