@@ -25,7 +25,7 @@ type
 
   protected
 
-    method EncodeObjectStart(aName: String; aValue: IEncodable); override;
+    method EncodeObjectStart(aName: String; aValue: IEncodable; aExpectedType: &Type := nil); override;
     begin
       var lNew := new XmlElement withName(typeOf(aValue).ToString);
 
