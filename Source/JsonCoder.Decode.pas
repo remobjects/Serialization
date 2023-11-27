@@ -50,9 +50,10 @@ type
 
     method DecodeObjectStart(aName: String): Boolean; override;
     begin
-      if DoGetValue(aName) is JsonObject then
+      if DoGetValue(aName) is JsonObject then begin
         Hierarchy.Push(DoGetValue(aName));
-      result := true;
+        result := true;
+      end;
     end;
 
     method DecodeObjectEnd(aName: String); override;
@@ -67,8 +68,8 @@ type
     begin
       if DoGetValue(aName) is JsonArray then begin
         Hierarchy.Push(DoGetValue(aName));
+        result := true;
       end;
-      result := true;
     end;
 
     {$IF NOT ISLAND}
@@ -98,9 +99,9 @@ type
     method DoGetValue(aName: nullable String): JsonNode;
     begin
       if assigned(aName) and (Current is JsonObject) then
-        result := Current[aName];
-      //else
-        //result := Current;
+        result := Current[aName]
+      else
+        result := Current;
     end;
 
   end;
