@@ -183,7 +183,7 @@ type
         PlatformDateTime: result := DecodeDateTime(nil);
         PlatformGuid: result := DecodeGuid(nil);
         {$ENDIF}
-        else result := Decode(typeOf(T));
+        else result := DecodeObject(nil, typeOf(T));
       end;
     end;
 

@@ -14,14 +14,14 @@ type
 
     end;
 
-    method Encode(aObject: Object);
+    method Encode(aObject: Object; aExpectedType: &Type := nil);
     begin
       Encode(nil, aObject);
     end;
 
     method Encode<T>(aValue: T);
     begin
-      Encode(nil, aValue);
+      Encode(nil, aValue, typeOf(T));
     end;
 
     //method Encode<T>(aName: String; aValue: T);
@@ -29,7 +29,7 @@ type
       //Encode(aName, aValue);
     //end;
 
-    method Encode/*<T>*/(aName: String; aValue: Object);
+    method Encode/*<T>*/(aName: String; aValue: Object; aExpectedType: &Type := nil);
     begin
       if not assigned(aValue) then begin
         if ShouldEncodeNil then
@@ -64,7 +64,7 @@ type
         {$ENDIF}
         else begin
           if aValue is IEncodable then
-            EncodeObject(aName, aValue as IEncodable)
+            EncodeObject(aName, aValue as IEncodable, aExpectedType)
           else if assigned(aName) then
             raise new CodingExeption($"Type '{typeOf(aValue)}' for field or property '{aName}' is not encodable.")
           else
@@ -85,13 +85,13 @@ type
       end;
     end;
 
-    method EncodeArray<T>(aName: String; aValue: array of T); {$IF NOT ISLAND}virtual;{$ENDIF}
+    method EncodeArray<T>(aName: String; aValue: array of T; aExpectedType: &Type := nil); {$IF NOT ISLAND}virtual;{$ENDIF}
     begin
       if assigned(aValue) then begin
         EncodeArrayStart(aName);
         for each e in aValue do begin
           if assigned(e) then
-            Encode(nil, e)
+            Encode(nil, e, aExpectedType)
           else
             EncodeNil(nil);
         end;
@@ -102,7 +102,7 @@ type
       end;
     end;
 
-    method EncodeList<T>(aName: String; aValue: List<T>);
+    method EncodeList<T>(aName: String; aValue: List<T>; aExpectedType: &Type := nil);
     begin
       raise new NotImplementedException("EncodeList<T>");
     end;
