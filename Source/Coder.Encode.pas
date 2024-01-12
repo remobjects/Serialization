@@ -19,7 +19,8 @@ type
       Encode(nil, aObject);
     end;
 
-    method Encode<T>(aValue: T);
+    {$IF ECHOES OR ISLAND}
+    method Encode<T>(aValue: T; aExpectedType: &Type := nil);
     begin
       Encode(nil, aValue, typeOf(T));
     end;
@@ -28,8 +29,9 @@ type
     //begin
       //Encode(aName, aValue);
     //end;
+    {$ENDIF}
 
-    method Encode/*<T>*/(aName: String; aValue: Object; aExpectedType: &Type := nil);
+    method Encode(aName: String; aValue: Object; aExpectedType: &Type := nil);
     begin
       if not assigned(aValue) then begin
         if ShouldEncodeNil then
@@ -40,6 +42,9 @@ type
       case aValue type of
         DateTime: EncodeDateTime(aName, aValue as DateTime);
         String: EncodeString(aName, aValue as String);
+        //{$IF TOFFEE}
+        //NSNumber: EncodeNumber(aName, aValue as Int8);
+        //{$ELSE}
         Int8: EncodeInt8(aName, aValue as Int8);
         Int16: EncodeInt16(aName, aValue as Int16);
         Int32: EncodeInt32(aName, aValue as Int32);
@@ -57,6 +62,7 @@ type
         Boolean: EncodeBoolean(aName, aValue as Boolean);
         Single: EncodeSingle(aName, aValue as Single);
         Double: EncodeDouble(aName, aValue as Double);
+        //{$ENDIF}
         Guid: EncodeGuid(aName, aValue as Guid);
         {$IF NOT COOPER} // On these platforms the types are aliased
         PlatformDateTime: EncodeDateTime(aName, aValue as DateTime);
@@ -104,7 +110,19 @@ type
 
     method EncodeList<T>(aName: String; aValue: List<T>; aExpectedType: &Type := nil);
     begin
-      raise new NotImplementedException("EncodeList<T>");
+      if assigned(aValue) then begin
+        EncodeListStart(aName);
+        for each e in aValue do begin
+          if assigned(e) then
+            Encode(nil, e, aExpectedType)
+          else
+            EncodeNil(nil);
+        end;
+        EncodeListEnd(aName);
+      end
+      else if ShouldEncodeNil then begin
+        EncodeNil(aName);
+      end;
     end;
 
 
@@ -162,6 +180,13 @@ type
       else if ShouldEncodeNil then
         EncodeString(aName, nil);
     end;
+
+    {$IF TOFFEE}
+    method EncodeNumber(aName: String; aValue: nullable NSNumber); virtual;
+    begin
+      EncodeString(aName, aValue:ToString);
+    end;
+    {$ENDIF}
 
     method EncodeInt8(aName: String; aValue: nullable Int8); virtual;
     begin
