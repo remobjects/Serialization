@@ -10,11 +10,13 @@ type
       result.Decode(self);
     end;
 
+    {$IF ECHOES OR ISLAND}
     method Decode<T>: T; where T has constructor, T is IDecodable;
     begin
       result := new T;
       result.Decode(self);
     end;
+    {$ENDIF}
 
     method DecodeArray<T>(aName: String): array of T;
     begin
@@ -30,7 +32,14 @@ type
 
     method DecodeList<T>(aName: String): List<T>;
     begin
-      raise new NotImplementedException("DecodeList<T>");
+      if DecodeArrayStart(aName) then begin
+        {$IF NOT ISLAND}
+        result := DecodeListElements<T>(aName);
+        {$ELSE}
+        raise new CodingExeption($"Decoding of arrays and lists is not (yet) supported on Island.");
+        {$ENDIF}
+        DecodeArrayEnd(aName);
+      end;
     end;
 
     method DecodeObject(aName: String; aType: &Type): IDecodable;
@@ -156,9 +165,16 @@ type
     {$ENDIF}
     method DecodeArrayEnd(aName: String); abstract;
 
+    {$IF ECHOES OR ISLAND}
     method DecodeArrayElement<T>(aName: String): Object; {$IF NOT ISLAND}virtual;{$ENDIF}
     begin
-      case typeOf(T) of
+      result := DecodeArrayElement(aName, typeOf(T))
+    end;
+    {$ENDIF}
+
+    method DecodeArrayElement(aName: String; aType: &Type): Object; {$IF NOT ISLAND}virtual;{$ENDIF}
+    begin
+      case aType of
         DateTime: result := DecodeDateTime(nil);
         String: result := DecodeString(nil);
         Int8: result := DecodeInt8(nil);
@@ -183,7 +199,7 @@ type
         PlatformDateTime: result := DecodeDateTime(nil);
         PlatformGuid: result := DecodeGuid(nil);
         {$ENDIF}
-        else result := DecodeObject(nil, typeOf(T));
+        else result := DecodeObject(nil, aType);
       end;
     end;
 
