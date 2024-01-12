@@ -28,6 +28,11 @@ type
       result := Json.ToString;
     end;
 
+    method ToJsonString(aFormat: JsonFormat := JsonFormat.HumanReadable): String;
+    begin
+      result := Json.ToJsonString(aFormat);
+    end;
+
   end;
 
 end.
