@@ -8,6 +8,8 @@ uses
 type
   NamingStyle = public enum(AsIs, PascalCase, camelCase, lowercase, UPPERCASE);
 
+  Direction = enum(Encode, Decode);
+
   Codable = public class(System.Attribute, IBaseAspect, ITypeInterfaceDecorator, ITypeImplementationDecorator)
   public
 
@@ -166,12 +168,7 @@ type
         var lValue: Value;
         var lPosition: IPosition := nil;
 
-        var (lEncoderFunction, lEncoderType) := GetCoderFunctionName(p.Type);
-
-        if not assigned(lEncoderFunction) then begin
-          fServices.EmitWarning(p, $"Type '{p.Type.Fullname}' for property '{p.Name}' is not encodable");
-          continue;
-        end;
+        var (lEncoderFunction, lEncoderType) := GetCoderFunctionName(p.Type, Direction.Encode);
 
         var lParameterName := AdjustName(p.Name);
 
@@ -212,6 +209,11 @@ type
           else begin
               lValue := new ProcValue(new ParamValue(0), "Encode"+lEncoderFunction, nil, [lParameterName, new IdentifierValue(p.Name)]);
             end;
+        end;
+
+        if not assigned(lEncoderFunction) then begin
+          fServices.EmitWarning(p, $"Type '{FlattenType(p.Type).Fullname}' for property '{p.Name}' is not encodable");
+          continue;
         end;
 
         //var lValue := case lEncoderFunction in ["Object", "Array", "List"] then
@@ -268,14 +270,43 @@ type
 
         //Log($"p.Type {p.Type.Fullname}, {lType.Fullname}");
 
-        var (lDecoderFunction, lDecoderType) := GetCoderFunctionName(p.Type);
-
-        if not assigned(lDecoderFunction) then begin
-          fServices.EmitWarning(p, $"Type '{p.Type.Fullname}' for property '{p.Name}' is not decodable");
-          continue;
-        end;
+        var (lDecoderFunction, lDecoderType) := GetCoderFunctionName(p.Type, Direction.Decode);
 
         var lParameterName := AdjustName(p.Name);
+
+        //Log($"AttributeCount for {p.Name}: {p.AttributeCount}");
+        for i := 0 to p.AttributeCount-1 do begin
+          var a := p.GetAttribute(i);
+          //Log($"a.Type.Fullname {a.Type.Fullname}");
+          case a.Type.Fullname of
+            //"RemObjects.Elements.Serialization.EncodeMemberAttribute": begin
+                //lPosition := a;
+                //var lName := a.GetParameter(0);
+                ////writeLn($"lName.ToString {lName.ToString}");
+                ////lValue := new IfStatement()
+                //lValue := new ProcValue(new ParamValue(0), "EncodeField", nil, false, [AdjustName(p.Name)+"."+AdjustName(lName.ToString),
+                                                                                       //new IdentifierValue(new IdentifierValue(p.Name), lName.ToString)]);
+                //break;
+              //end;
+
+            "RemObjects.Elements.Serialization.EncodeAttribute": begin
+                var lParameter := a.GetParameter(0) as DataValue;
+                if lParameter.Value is Boolean then begin
+                  if not Boolean(lParameter.Value) then
+                    continue PropertiesLoop;
+                end
+                else begin
+                  lParameterName := lParameter.ToString;
+                end;
+                break;
+              end;
+          end;
+        end;
+
+        if not assigned(lDecoderFunction) then begin
+          fServices.EmitWarning(p, $"Type '{FlattenType(p.Type).Fullname}' for property '{p.Name}' is not decodable");
+          continue;
+        end;
 
         for i := 0 to p.AttributeCount-1 do begin
           var a := p.GetAttribute(i);
@@ -291,7 +322,9 @@ type
               //end;
 
             "RemObjects.Elements.Serialization.EncodeAttribute": begin
+                //Log($"has EncodeAttribute");
                 var lParameter := a.GetParameter(0) as DataValue;
+                //Log($"lParameter {lParameter}");
                 if lParameter.Value is Boolean then begin
                   if not Boolean(lParameter.Value) then
                     continue PropertiesLoop;
@@ -333,29 +366,30 @@ type
     // Helpers
     //
 
-    method GetCoderFunctionName(aType: IType): tuple of (String, IType);
+    method FlattenType(aType: IType): IType;
     begin
+      while aType is ILinkType do
+        aType := (aType as ILinkType).SubType;
+      while aType is IRemappedType do
+        aType := (aType as IRemappedType).RealType;
+      while aType is ILinkType do
+        aType := (aType as ILinkType).SubType;
+      while aType is IWrappedNullableType do
+        aType := (aType as IWrappedNullableType).SubType;
+      while aType is INotNullableType do
+        aType := (aType as INotNullableType).SubType;
+      result := aType;
+    end;
 
-      method FlattenType(aType: IType): IType;
-      begin
-        while aType is ILinkType do
-          aType := (aType as ILinkType).SubType;
-        while aType is IRemappedType do
-          aType := (aType as IRemappedType).RealType;
-        while aType is ILinkType do
-          aType := (aType as ILinkType).SubType;
-        while aType is IWrappedNullableType do
-          aType := (aType as IWrappedNullableType).SubType;
-        while aType is INotNullableType do
-          aType := (aType as INotNullableType).SubType;
-        result := aType;
-      end;
+    method GetCoderFunctionName(aType: IType; aDirection: Direction): tuple of (String, IType);
+    begin
 
       aType := FlattenType(aType);
 
       var lCoderFunction: String;
       var lCoderType: IType;
       case aType.Fullname of
+        "RemObjects.Elements.RTL.String", // why does nullabke Stirng have "RemObjects.Elements.RTL.String", bnut regular has System?
         "System.String": lCoderFunction := "String";
 
         "RemObjects.Elements.RTL.Guid",
@@ -379,7 +413,7 @@ type
         "System.Double": lCoderFunction := "Double";
         "System.Boolean": lCoderFunction := "Boolean";
         else begin
-          if IsDecodable(aType) then begin
+          if ((aDirection = Direction.Encode) and IsEncodable(aType)) or ((aDirection = Direction.Decode) and IsDecodable(aType)) then begin
             lCoderFunction := "Object";
             lCoderType := aType;
             //Log($"Decode: treating '{lType.Fullname}' as decodale object");
@@ -390,16 +424,28 @@ type
           end
           else if aType is var lGeneric: IGenericInstantiationType then begin
             var lType := FlattenType(lGeneric.GenericType);
-            if (lType.Name = "Nullable`1") and (lGeneric.ParameterCount = 1) then begin
+            if lGeneric.ParameterCount = 1 then begin
               var lNestedType := lGeneric.GetParameter(0);
-              var lNestedCoderFunction := GetCoderFunctionName(lNestedType);
-              if assigned(lNestedCoderFunction[0]) then
-                lCoderFunction := /*"Nullable"+*/lNestedCoderFunction[0];
+              if lType.Name = "Nullable`1" then begin {$HINT use fullname}
+                var lNestedCoderFunction := GetCoderFunctionName(lNestedType, aDirection);
+                if assigned(lNestedCoderFunction[0]) then
+                  lCoderFunction := /*"Nullable"+*/lNestedCoderFunction[0];
+              end
+              else if lType.Fullname in ["System.Collections.Generic.List`1",
+                                         "RemObjects.Elements.RTL.List`1"] then begin
+                lCoderFunction := "List";
+                lCoderType := FlattenType(lNestedType);
+              end
+              else begin
+                Log($"Unsupported generic type {aType} {lNestedType.Fullname}");
+              end;
+            end
+            else begin
+              Log($"Unsupported generic type {aType} {aType.Fullname}");
             end;
-
           end
           else begin
-            //Log($"Unsupported type {aType} {aType.Fullname}");
+            Log($"Unsupported type {aType} {aType.Fullname}");
           end;
         end;
       end;
@@ -482,37 +528,39 @@ type
       fType.AddInterface(fServices.GetType(aName));
     end;
 
-    method TypeImplementsInterface(aType: IType; aName: String): Boolean;
-    begin
-      for i := 0 to aType.InterfaceCount-1 do begin
-        if aType.GetInterface(i).Name = aName then
+  end;
+
+  method TypeImplementsInterface(aType: IType; aName: String): Boolean;
+  begin
+    for i := 0 to aType.InterfaceCount-1 do begin
+      if aType.GetInterface(i).Name = aName then
+        exit true;
+    end;
+  end;
+
+  method TypeHasAttribute(aType: IType; aName: String): Boolean;
+  begin
+    if aType is var lAttributesProvider: IAttributesProvider then
+      for i := 0 to lAttributesProvider.AttributeCount-1 do
+        if lAttributesProvider.GetAttribute(i).Type.Fullname = aName then
           exit true;
-      end;
-    end;
+  end;
 
-    method TypeHasAttribute(aType: IType; aName: String): Boolean;
-    begin
-      if aType is var lAttributesProvider: IAttributesProvider then
-        for i := 0 to lAttributesProvider.AttributeCount-1 do
-          if lAttributesProvider.GetAttribute(i).Type.Fullname = aName then
-            exit true;
-    end;
+  method IsDecodable(aType: IType): Boolean;
+  begin
+    result := TypeImplementsInterface(aType, "RemObjects.Elements.Serialization.IDecodable") or
+              TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Decodable") or
+              TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Codable") or
+              assigned(aType.ParentType) and IsDecodable(aType.ParentType);
+  end;
 
-    method IsDecodable(aType: IType): Boolean;
-    begin
-      result := TypeImplementsInterface(aType, "RemObjects.Elements.Serialization.IDecodable") or
-                TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Decodable") or
-                TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Codable");
+  method IsEncodable(aType: IType): Boolean;
+  begin
+    result := TypeImplementsInterface(aType, "RemObjects.Elements.Serialization.IEncodable") or
+              TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Encodable") or
+              TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Codable") or
+              assigned(aType.ParentType) and IsEncodable(aType.ParentType);
 
-    end;
-
-    method IsEncodable(aType: IType): Boolean;
-    begin
-      result := TypeImplementsInterface(aType, "RemObjects.Elements.Serialization.IEncodable") or
-                TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Encodable") or
-                TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Codable");
-
-    end;
   end;
 
 end.
