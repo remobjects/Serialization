@@ -21,6 +21,7 @@
     <EnableAsserts>True</EnableAsserts>
     <CpuType>anycpu</CpuType>
     <EnableUnmanagedDebugging>False</EnableUnmanagedDebugging>
+    <PDBType>EmbeddedPortable</PDBType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <OutputPath>.\Bin\Release</OutputPath>

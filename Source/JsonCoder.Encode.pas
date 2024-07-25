@@ -85,6 +85,19 @@ type
       raise new NotImplementedException("EncodeList<T>");
     end;
 
+    class method ToJsonString(aObject: IEncodable; aFormat: JsonFormat := JsonFormat.HumanReadable): String;
+    begin
+      var lTemp := new JsonCoder();
+      lTemp.Encode(aObject);
+      result := lTemp.ToJsonString(aFormat);
+    end;
+
+    class method FromJsonString<T>(aJsonString: String): T; where T has constructor, T is IDecodable;
+    begin
+      var lTemp := new JsonCoder withJson(JsonDocument.FromString(aJsonString));
+      result := lTemp.Decode<T>;
+    end;
+
   protected
 
     method EncodeObjectStart(aName: String; aValue: IEncodable; aExpectedType: &Type := nil); override;
@@ -152,6 +165,18 @@ type
         lJsonArray.Add(aValue)
       //else if not assigned(Current) then
         //Current := aValue;
+    end;
+
+  end;
+
+  IEncodable_Json_Extension = public extension class(IEncodable)
+  public
+
+    method ToJsonString(aFormat: JsonFormat := JsonFormat.HumanReadable): String;
+    begin
+      var lTemp := new JsonCoder();
+      lTemp.Encode(self);
+      result := lTemp.ToJsonString(aFormat);
     end;
 
   end;

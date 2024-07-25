@@ -546,7 +546,7 @@ type
           exit true;
   end;
 
-  method IsDecodable(aType: IType): Boolean;
+  method IsDecodable(aType: IType): Boolean; inline;
   begin
     result := TypeImplementsInterface(aType, "RemObjects.Elements.Serialization.IDecodable") or
               TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Decodable") or
