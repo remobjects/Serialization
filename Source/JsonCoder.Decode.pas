@@ -41,6 +41,11 @@ type
       result := DoGetValue(aName):BooleanValue
     end;
 
+    method DecodeJsonNode(aName: String): JsonNode; override;
+    begin
+      result := DoGetValue(aName);
+    end;
+
     //
 
     method DecodeObjectType(aName: String): String; override;

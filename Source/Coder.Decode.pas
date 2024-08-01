@@ -10,6 +10,11 @@ type
       result.Decode(self);
     end;
 
+    method Decode(aValue: IDecodable);
+    begin
+      aValue.Decode(self);
+    end;
+
     {$IF ECHOES OR ISLAND}
     method Decode<T>: T; where T has constructor, T is IDecodable;
     begin
@@ -154,6 +159,13 @@ type
     end;
 
     method DecodeString(aName: String): String; abstract;
+
+    method DecodeJsonNode(aName: String): JsonNode; virtual;
+    begin
+      var lValue := DecodeString(aName);
+      if length(lValue) > 0 then
+        result := JsonDocument.FromString(lValue);
+    end;
 
     method DecodeObjectType(aName: String): String; virtual; empty;
     method DecodeObjectStart(aName: String): Boolean; abstract;

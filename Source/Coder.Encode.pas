@@ -226,6 +226,11 @@ type
     method EncodeString(aName: String; aValue: nullable String); abstract;
     method EncodeNil(aName: String); abstract;
 
+    method EncodeJsonNode(aName: String; aValue: nullable JsonNode); virtual;
+    begin
+      EncodeString(aName, aValue:ToJsonString(JsonFormat.Minimal));
+    end;
+
     property ShouldEncodeNil: Boolean := false;
     property ShouldEncodeDefault: Boolean := false;
 

@@ -78,6 +78,11 @@ type
       DoEncodeValue(aName, JsonNullValue.Null);
     end;
 
+    method EncodeJsonNode(aName: String; aValue: nullable JsonNode); override;
+    begin
+      DoEncodeValue(aName, aValue);
+    end;
+
     //
 
     method EncodeList<T>(aName: String; aValue: List<T>);
