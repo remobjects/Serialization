@@ -53,6 +53,7 @@
     <Compile Include="Attributes.pas" />
     <Compile Include="XmlCoder.Decode.pas" />
     <Compile Include="JsonCoder.Decode.pas" />
+    <Compile Include="Codable.pas" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Elements\RemObjects.Elements.targets" />
 </Project>

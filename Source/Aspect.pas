@@ -10,7 +10,7 @@ type
 
   Direction = enum(Encode, Decode);
 
-  Codable = public class(System.Attribute, IBaseAspect, ITypeInterfaceDecorator, ITypeImplementationDecorator)
+  CodableAspect = public class(System.Attribute, IBaseAspect, ITypeInterfaceDecorator, ITypeImplementationDecorator)
   public
 
     method HandleInterface(aServices: IServices; aType: ITypeDefinition); virtual;
@@ -43,7 +43,7 @@ type
 
   end;
 
-  Encodable = public class(Codable)
+  EncodableAspect = public class(CodableAspect)
   public
 
     method HandleInterface(aServices: IServices; aType: ITypeDefinition); override;
@@ -61,7 +61,7 @@ type
 
   end;
 
-  Decodable = public class(Codable)
+  DecodableAspect = public class(CodableAspect)
   public
 
     method HandleInterface(aServices: IServices; aType: ITypeDefinition); override;
@@ -398,6 +398,8 @@ type
         "RemObjects.Elements.RTL.DateTime",
         "System.DateTime": lCoderFunction := "DateTime";
 
+        "RemObjects.Elements.RTL.JsonNode": lCoderFunction := "JsonNode";
+
         "System.Byte": lCoderFunction := "UInt8";
         "System.SByte": lCoderFunction := "Int8";
         "System.Int16": lCoderFunction := "Int16";
@@ -546,19 +548,19 @@ type
           exit true;
   end;
 
-  method IsDecodable(aType: IType): Boolean; inline;
+  method IsDecodable(aType: IType): Boolean; //inline;
   begin
     result := TypeImplementsInterface(aType, "RemObjects.Elements.Serialization.IDecodable") or
-              TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Decodable") or
-              TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Codable") or
+              TypeHasAttribute(aType, "RemObjects.Elements.Serialization.DecodableAspect") or
+              TypeHasAttribute(aType, "RemObjects.Elements.Serialization.CodableAspect") or
               assigned(aType.ParentType) and IsDecodable(aType.ParentType);
   end;
 
   method IsEncodable(aType: IType): Boolean;
   begin
     result := TypeImplementsInterface(aType, "RemObjects.Elements.Serialization.IEncodable") or
-              TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Encodable") or
-              TypeHasAttribute(aType, "RemObjects.Elements.Serialization.Codable") or
+              TypeHasAttribute(aType, "RemObjects.Elements.Serialization.EncodableAspect") or
+              TypeHasAttribute(aType, "RemObjects.Elements.Serialization.CodableAspect") or
               assigned(aType.ParentType) and IsEncodable(aType.ParentType);
 
   end;
