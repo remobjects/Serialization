@@ -169,6 +169,7 @@ type
         var lPosition: IPosition := nil;
 
         var (lEncoderFunction, lEncoderType) := GetCoderFunctionName(p.Type, Direction.Encode);
+        //Log($"{p.Name}: {lEncoderFunction}");
 
         var lParameterName := AdjustName(p.Name);
 
@@ -368,16 +369,15 @@ type
 
     method FlattenType(aType: IType): IType;
     begin
-      while aType is ILinkType do
-        aType := (aType as ILinkType).SubType;
-      while aType is IRemappedType do
-        aType := (aType as IRemappedType).RealType;
-      while aType is ILinkType do
-        aType := (aType as ILinkType).SubType;
-      while aType is IWrappedNullableType do
-        aType := (aType as IWrappedNullableType).SubType;
-      while aType is INotNullableType do
-        aType := (aType as INotNullableType).SubType;
+      loop begin
+        case aType type of
+          ILinkType: aType := (aType as ILinkType).SubType;
+          IRemappedType: aType := (aType as IRemappedType).RealType;
+          IWrappedNullableType: aType := (aType as IWrappedNullableType).SubType;
+          INotNullableType: aType := (aType as INotNullableType).SubType;
+          else break;
+        end;
+      end;
       result := aType;
     end;
 
@@ -389,7 +389,8 @@ type
       var lCoderFunction: String;
       var lCoderType: IType;
       case aType.Fullname of
-        "RemObjects.Elements.RTL.String", // why does nullabke Stirng have "RemObjects.Elements.RTL.String", bnut regular has System?
+        "RemObjects.Elements.RTL.PlatformString", // why does nullable Stirng NOW have "RemObjects.Elements.RTL.PlatformString", but regular has System?
+        "RemObjects.Elements.RTL.String", // why does nullable Stirng have "RemObjects.Elements.RTL.String", bnut regular has System?
         "System.String": lCoderFunction := "String";
 
         "RemObjects.Elements.RTL.Guid",
@@ -434,7 +435,8 @@ type
                   lCoderFunction := /*"Nullable"+*/lNestedCoderFunction[0];
               end
               else if lType.Fullname in ["System.Collections.Generic.List`1",
-                                         "RemObjects.Elements.RTL.List`1"] then begin
+                                         "RemObjects.Elements.RTL.List`1",
+                                         "RemObjects.Elements.RTL.ImmutableList`1"] then begin
                 lCoderFunction := "List";
                 lCoderType := FlattenType(lNestedType);
               end
