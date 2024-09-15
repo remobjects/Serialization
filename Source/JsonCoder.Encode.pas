@@ -97,6 +97,12 @@ type
       result := lTemp.ToJsonString(aFormat);
     end;
 
+    class method FromJson<T>(aJson: JsonNode): T; where T has constructor, T is IDecodable;
+    begin
+      var lTemp := new JsonCoder withJson(aJson);
+      result := lTemp.Decode<T>;
+    end;
+
     class method FromJsonString<T>(aJsonString: String): T; where T has constructor, T is IDecodable;
     begin
       var lTemp := new JsonCoder withJson(JsonDocument.FromString(aJsonString));
@@ -176,6 +182,13 @@ type
 
   IEncodable_Json_Extension = public extension class(IEncodable)
   public
+
+    method ToJson(aFormat: JsonFormat := JsonFormat.HumanReadable): JsonNode;
+    begin
+      var lTemp := new JsonCoder();
+      lTemp.Encode(self);
+      result := lTemp.Json;
+    end;
 
     method ToJsonString(aFormat: JsonFormat := JsonFormat.HumanReadable): String;
     begin
