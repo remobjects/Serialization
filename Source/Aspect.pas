@@ -168,9 +168,6 @@ type
         var lValue: Value;
         var lPosition: IPosition := nil;
 
-        var (lEncoderFunction, lEncoderType) := GetCoderFunctionName(p.Type, Direction.Encode);
-        //Log($"{p.Name}: {lEncoderFunction}");
-
         var lParameterName := AdjustName(p.Name);
 
         for i := 0 to p.AttributeCount-1 do begin
@@ -199,6 +196,9 @@ type
               end;
           end;
         end;
+
+        var (lEncoderFunction, lEncoderType) := GetCoderFunctionName(p.Type, Direction.Encode);
+        //Log($"{p.Name}: {lEncoderFunction}");
 
         case lEncoderFunction of
           "Object": begin
@@ -271,8 +271,6 @@ type
 
         //Log($"p.Type {p.Type.Fullname}, {lType.Fullname}");
 
-        var (lDecoderFunction, lDecoderType) := GetCoderFunctionName(p.Type, Direction.Decode);
-
         var lParameterName := AdjustName(p.Name);
 
         //Log($"AttributeCount for {p.Name}: {p.AttributeCount}");
@@ -303,6 +301,8 @@ type
               end;
           end;
         end;
+
+        var (lDecoderFunction, lDecoderType) := GetCoderFunctionName(p.Type, Direction.Decode);
 
         if not assigned(lDecoderFunction) then begin
           fServices.EmitWarning(p, $"Type '{FlattenType(p.Type).Fullname}' for property '{p.Name}' is not decodable");
@@ -550,7 +550,7 @@ type
           exit true;
   end;
 
-  method IsDecodable(aType: IType): Boolean; //inline;
+  method IsDecodable(aType: IType): Boolean;
   begin
     result := TypeImplementsInterface(aType, "RemObjects.Elements.Serialization.IDecodable") or
               TypeHasAttribute(aType, "RemObjects.Elements.Serialization.DecodableAspect") or
